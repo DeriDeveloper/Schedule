@@ -12,12 +12,10 @@ namespace WebApi.Controllers
     public class RegistrationController : ControllerBase
     {
         private readonly DBContext _context;
-        private readonly PasswordHashService _passwordHashService;
 
         public RegistrationController(DBContext context)
         {
             _context = context;
-            _passwordHashService = new PasswordHashService();
         }
 
         [HttpPost]
@@ -32,7 +30,7 @@ namespace WebApi.Controllers
 
             var userRole = await _context.UserRoles.FirstOrDefaultAsync(x=>x.Name.ToLower() == "студент");
 
-            var hashPassword = _passwordHashService.HashPassword(model.Password);
+            var hashPassword = PasswordHashService.HashPassword(model.Password);
 
             user = new User()
             {

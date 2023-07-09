@@ -2,7 +2,7 @@
 {
     public class PasswordHashService
     {
-        public string HashPassword(string password)
+        public static string HashPassword(string password)
         {
             string salt = BCrypt.Net.BCrypt.GenerateSalt();
 
@@ -10,7 +10,7 @@
 
             return hashedPassword;
         }
-        public bool VerifyHash(string password, string hashedPassword)
+        public static bool VerifyHash(string password, string hashedPassword)
         {
             bool passwordMatched = BCrypt.Net.BCrypt.Verify(password, hashedPassword);
 

@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApi.Entities;
+using WebApi.Models;
+using WebApi.Services;
 
 namespace WebApi.Controllers
 {
@@ -17,7 +19,7 @@ namespace WebApi.Controllers
 
         // GET: api/auth
         [HttpGet]
-        public async Task<ActionResult<User>> GetUser(RequestAuth model)
+        public async Task<ActionResult<ResponseAuth>> GetUser(RequestAuth model)
         {
             if (_context.Users == null)
             {
@@ -29,20 +31,29 @@ namespace WebApi.Controllers
                 return BadRequest();
             }
 
-            var user = await _context.Users.FirstOrDefaultAsync(x=>x.Login == model.Login && x.HashPassword == model.Password);
+            var user = await _context.Users.FirstOrDefaultAsync(x=>x.Login == model.Login);
 
             if(user is null)
             {
                 return NotFound();
             }
 
-            return user;
+            if (PasswordHashService.VerifyHash(model.Password, user.HashPassword))
+            {
+                var token = JwtHelperService.GenerateToken(user.Login, 1);
+
+
+                return new ResponseAuth()
+                {
+                    Token = token
+                };
+            }
+            else
+            {
+                return NotFound();
+            }
         }
 
-        public class RequestAuth
-        {
-            public string Login { get; set; }
-            public string Password { get; set; }
-        }
+
     }
 }

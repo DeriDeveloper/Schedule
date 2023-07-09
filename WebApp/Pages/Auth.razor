@@ -1,5 +1,11 @@
 ﻿@page "/auth"
+@using System.Diagnostics;
 @using WebApp.Models;
+@using WebApp.Services;
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+
 
 <PageTitle>Авторизация</PageTitle>
 
@@ -7,7 +13,6 @@
 <div style="width:300px; padding:10px; margin: 0 auto;">
     <h3 class="text-center">Авторизация</h3>
     <div style="margin-top:20px;">
-        <form @onsubmit="SubmitFormSignIn">
             <div class="block-input">
                 <label>Логин</label>
                 <div class="container-input @(focusInputLogin ? "container-input-focus": "")" >
@@ -31,12 +36,15 @@
                 </div>
                 <p class="warning-color" style="margin: 0; @(showErrorMessageInputPassword ? "visibility: visible;" : "visibility: collapse;")">@(textErrorMessageInputPassword)</p>
             </div>
-            <button type="submit" class="btn btn-primary" style="margin-top: 20px;">Войти</button>
-        </form>
+            <button class="btn btn-primary" disabled="@(!isButtonSignInEnabled)" style="margin-top: 20px;" @onclick="SignIn">Войти</button>
+            <p class="warning-color" style="margin: 0; margin-top: 15px; @(showGlobalMessage ? "visibility: visible;" : "visibility: collapse;")">@(textGlobalMessage)</p>
     </div>
 </div>
 
+
 @code {
+    private string urlRedirect = "";
+
     private bool showPassword = false;
     private bool focusInputLogin = false;
     private bool focusInputPassword = false;
@@ -48,12 +56,97 @@
     private bool showErrorMessageInputPassword = false;
     private bool validInputPassword = false;
 
+    private string textGlobalMessage = "";
+    private bool showGlobalMessage = false;
+
+    private bool isButtonSignInEnabled = true;
+
     private LoginModel loginModel = new LoginModel();
 
 
-    private async Task SubmitFormSignIn()
+    protected override void OnInitialized()
     {
-        var sd= ScheduleAPIService.();
+        var uri = new Uri(NavigationManager.Uri);
+        var urlRedirect = System.Web.HttpUtility.ParseQueryString(uri.Query).Get("urlRedirect");
+
+        if (!string.IsNullOrEmpty(urlRedirect))
+        {
+            this.urlRedirect = urlRedirect;
+        }
+    }
+
+    private async Task SignIn(MouseEventArgs e)
+    {
+        isButtonSignInEnabled = false;
+
+        try
+        {
+            var response = await ScheduleAPIService.AuthorizationAsync(loginModel.Login, loginModel.Password);
+
+            var status = response.status;
+
+            if (status == System.Net.HttpStatusCode.OK)
+            {
+                var token = response.response?.Token;
+
+                if (string.IsNullOrEmpty(token))
+                {
+                    throw new ArgumentNullException(nameof(token), "Значение токена не может быть пыстым или равным null.");
+                }
+
+
+
+                #region Заменить изменение token в cookie с помощью  HttpContextAccessor.HttpContext.Response.Cookies (не дает потому что "web socket" status: 101)
+
+                await JSRuntime.InvokeVoidAsync("eval", $"document.cookie = 'TokenAccess={token}; expires={DateTime.UtcNow.AddMonths(6).ToString("R")}; path=/';");
+
+
+                /*var option = new CookieOptions();
+                option.Expires = DateTime.Now.AddMonths(6); 
+                option.IsEssential = true;
+                option.Secure = true;
+
+                HttpContextAccessor.HttpContext.Response.Cookies.Append("TokenAccess", token, option);*/
+                #endregion
+
+                if (!string.IsNullOrEmpty(this.urlRedirect))
+                {
+                    NavigationManager.NavigateTo(this.urlRedirect);
+                }
+                else
+                {
+                    NavigationManager.NavigateTo("/Profile");
+                }
+                var foo = 0;
+            }
+            else if (status == System.Net.HttpStatusCode.NotFound)
+            {
+                UserNotFound();
+            }
+            else
+            {
+                ShowGlobalMessage("Произошла неизвестная ошибка, попробуйте еще раз!");
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex.ToString());
+        }
+
+        isButtonSignInEnabled = true;
+    }
+
+    private void UserNotFound()
+    {
+        ShowGlobalMessage("Неверный логин или пароль!");
+
+        textErrorMessageInputPassword = "";
+    }
+
+    private void ShowGlobalMessage(string message)
+    {
+        textGlobalMessage = message;
+        showGlobalMessage = true;
     }
 
 

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Net;
 using System.Text.Json.Serialization;
 using WebApp.Models;
 
@@ -6,10 +7,10 @@ namespace WebApp.Services
 {
     internal class ScheduleAPIService
     {
-        private readonly string urlAPI = "http://localhost:5045/api";
+        private static readonly string urlAPI = "http://localhost:5045/api";
 
 
-        public async Task<ResponseAuth?> Auth(string login, string password)
+        public static async Task<(HttpStatusCode? status, ResponseAuth? response)> AuthorizationAsync(string login, string password)
         {
             try
             {
@@ -27,16 +28,24 @@ namespace WebApp.Services
                 request.Content = content;
                 var response = await client.SendAsync(request);
 
-                response.EnsureSuccessStatusCode();
+                if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    var responseString = await response.Content.ReadAsStringAsync();
 
-                var responseString = await response.Content.ReadAsStringAsync();
+                    var responseAuth = Newtonsoft.Json.JsonConvert.DeserializeObject<ResponseAuth>(responseString);
 
-                return System.Text.Json.JsonSerializer.Deserialize<ResponseAuth>(responseString);
+                    return (status: response.StatusCode, response: responseAuth);
+                }
+                else
+                {
+                    return (status: response.StatusCode, response: null);
+
+                }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.ToString());
-                return null;
+                return (status: null, response: null);
             }
         }
     }

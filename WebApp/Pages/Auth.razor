@@ -1,0 +1,136 @@
+﻿@page "/auth"
+@using WebApp.Models;
+
+<PageTitle>Авторизация</PageTitle>
+
+
+<div style="width:300px; padding:10px; margin: 0 auto;">
+    <h3 class="text-center">Авторизация</h3>
+    <div style="margin-top:20px;">
+        <form @onsubmit="SubmitFormSignIn">
+            <div class="block-input">
+                <label>Логин</label>
+                <div class="container-input @(focusInputLogin ? "container-input-focus": "")" >
+                    <div class="container-input-icon">
+                        <img src="Images/User128.png" style="max-height:100%;max-width:100%;" />
+                    </div>
+                    <input type="text" @onfocus="HandelFocusInputLogin" @onblur="HandelBlurInputLogin" @bind="@loginModel.Login" />
+                </div>
+                <p class="warning-color" style="margin: 0; @(showErrorMessageInputLogin ? "visibility: visible;" : "visibility: collapse;")">@(textErrorMessageInputLogin)</p>
+            </div>
+            <div class="block-input">
+                <label>Пароль</label>
+                <div class="container-input @(focusInputPassword ? "container-input-focus": "")">
+                    <div class="container-input-icon">
+                        <img src="Images/padlock128.png" style="max-height:100%;max-width:100%;"/>
+                    </div>
+                    <input type="@GetPasswordInputType()" @onfocus="HandelFocusInputPassword" @onblur="HandelBlurInputPassword" @bind="@loginModel.Password" />
+                    <div>
+                        <img src="@eyeImageURL" @onclick="TogglePasswordVisibility" style="max-height:100%;max-width:100%; cursor:pointer;" />
+                    </div>
+                </div>
+                <p class="warning-color" style="margin: 0; @(showErrorMessageInputPassword ? "visibility: visible;" : "visibility: collapse;")">@(textErrorMessageInputPassword)</p>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top: 20px;">Войти</button>
+        </form>
+    </div>
+</div>
+
+@code {
+    private bool showPassword = false;
+    private bool focusInputLogin = false;
+    private bool focusInputPassword = false;
+    private string eyeImageURL = "Images/EyeView128.png";
+    private string textErrorMessageInputLogin = "";
+    private bool showErrorMessageInputLogin = false;
+    private bool validInputLogin = false;
+    private string textErrorMessageInputPassword = "";
+    private bool showErrorMessageInputPassword = false;
+    private bool validInputPassword = false;
+
+    private LoginModel loginModel = new LoginModel();
+
+
+    private async Task SubmitFormSignIn()
+    {
+        var sd= ScheduleAPIService.();
+    }
+
+
+
+    private void HandelFocusInputLogin()
+    {
+        focusInputLogin = true;
+    }
+
+    private void HandelBlurInputLogin()
+    {
+        focusInputLogin = false;
+
+        CheckValidDataLogin();
+    }
+    private void HandelFocusInputPassword()
+    {
+        focusInputPassword = true;
+    }
+
+    private void HandelBlurInputPassword()
+    {
+        focusInputPassword = false;
+
+        CheckValidDataPassword();
+
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        showPassword = !showPassword;
+
+        if (showPassword)
+        {
+            eyeImageURL = "Images/EyeHide128.png";
+        }
+        else
+        {
+            eyeImageURL = "Images/EyeView128.png";
+        }
+    }
+
+
+    private void CheckValidDataLogin()
+    {
+        if (string.IsNullOrEmpty(loginModel.Login))
+        {
+            showErrorMessageInputLogin = true;
+            textErrorMessageInputLogin = "Не введен логин!";
+            validInputLogin = false;
+        }
+        else
+        {
+            showErrorMessageInputLogin = false;
+            textErrorMessageInputLogin = "";
+            validInputLogin = true;
+        }        
+    }
+    private void CheckValidDataPassword()
+    {
+        if (string.IsNullOrEmpty(loginModel.Password))
+        {
+            showErrorMessageInputPassword = true;
+            textErrorMessageInputPassword = "Не введен пароль!";
+        }
+        else
+        {
+            showErrorMessageInputPassword = false;
+            textErrorMessageInputPassword = "";
+            validInputPassword = true;
+        }
+    }
+
+
+
+    private string GetPasswordInputType()
+    {
+        return showPassword ? "text" : "password";
+    }
+}

@@ -4,8 +4,18 @@ namespace WebApi
 {
     public class Program
     {
+        internal static IConfiguration config;
+
         public static void Main(string[] args)
         {
+            config = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json")
+            .Build();
+
+
+
+
             var builder = WebApplication.CreateBuilder(args);
 
 

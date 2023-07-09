@@ -66,3 +66,73 @@ a, .btn-link {
     .blazor-error-boundary::after {
         content: "An error has occurred."
     }
+
+
+
+.block-input {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 12px;
+}
+
+.container-input {
+    display: flex;
+    height: 40px;
+    box-sizing: border-box;
+    border: 1px solid #CBCBCB;
+    padding: 5px;
+    border-radius: 10px;
+}
+
+.container-input-icon {
+    width: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container-input-focus {
+    border: 1px solid #B381F9;
+}
+
+
+input {
+    border: none;
+    width:100%;
+    box-sizing:border-box;
+    background-color: transparent;
+}
+
+input:focus {
+    outline: none;
+}
+
+
+.btn{
+    border-radius:10px;
+    text-align:center;
+    font-size:16px;
+    border: none;
+    cursor:pointer;
+    width:100%;
+}
+
+.warning-color {
+    color: #EB4C42;
+}
+
+.btn-primary {
+    background-color: #B381F9;
+}
+
+.btn-primary:hover {
+    background-color: #B381F9;
+}
+
+.btn-primary:focus {
+    outline: 0 !important;
+    background-color: #B381F9;
+    border: none;
+}
+
+    

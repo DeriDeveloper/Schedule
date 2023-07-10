@@ -135,4 +135,16 @@ input:focus {
     border: none;
 }
 
-    
+.main-background {
+    background-color: #DFC8FF;
+}
+
+.container-block {
+    border-radius: 10px;
+    background-color: white;
+}
+
+.pd-20{
+    padding:20px;
+}
+

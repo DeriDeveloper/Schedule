@@ -15,6 +15,10 @@ public partial class DBContext : DbContext
     {
     }
 
+    public virtual DbSet<College> Colleges { get; set; }
+
+    public virtual DbSet<Group> Groups { get; set; }
+
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<UserAccessToken> UserAccessTokens { get; set; }
@@ -27,6 +31,14 @@ public partial class DBContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Group>(entity =>
+        {
+            entity.HasOne(d => d.College).WithMany(p => p.Groups)
+                .HasForeignKey(d => d.CollegeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Groups_Colleges");
+        });
+
         modelBuilder.Entity<User>(entity =>
         {
             entity.Property(e => e.Email).HasMaxLength(254);

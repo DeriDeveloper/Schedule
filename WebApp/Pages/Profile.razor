@@ -1,0 +1,212 @@
+﻿@page "/profile"
+@using System.Diagnostics;
+@using WebApp.Models;
+@using WebApp.Services;
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+
+
+
+<div class="container-block pd-20">
+    <h3>Профиль</h3>
+
+    <div>
+        <div class="block-input">
+            <label>Имя</label>
+            <div class="container-input @(focusInputName ? "container-input-focus": "")">
+                <input type="text" disabled="@(!isProfileNameEnabled)" @onfocus="HandelFocusInputName" @onblur="HandelBlurInputName" @bind="@profileModel.Name" />
+            </div>
+            <p class="warning-color" style="margin: 0; @(showErrorMessageInputName ? "visibility: visible;" : "visibility: collapse;")">@(textErrorMessageInputName)</p>
+        </div>
+
+        <button class="btn btn-primary" disabled="@(!isButtonSaveEnabled)" style="margin-top: 20px;" @onclick="SaveProfile">Сохранить</button>
+
+    </div>
+
+    @*<div>
+        <div class="block-input">
+            <label>Пароль</label>
+            <div class="container-input @(focusInputOldPassword ? "container-input-focus": "")">
+                <div class="container-input-icon">
+                    <img src="Images/padlock128.png" style="max-height:100%;max-width:100%;" />
+                </div>
+                <input type="@GetOldPasswordInputType()" @onfocus="HandelFocusInputOldPassword" @onblur="HandelBlurInputOldPassword" @bind="@profileModel.OldPassword" />
+                <div>
+                    <img src="@eyeImageURL" @onclick="ToggleOldPasswordVisibility" style="max-height:100%;max-width:100%; cursor:pointer;" />
+                </div>
+            </div>
+            <p class="warning-color" style="margin: 0; @(showErrorMessageInputOldPassword ? "visibility: visible;" : "visibility: collapse;")">@(textErrorMessageInputOldPassword)</p>
+        </div>
+
+        <button class="btn btn-primary" disabled="@(!isButtonChangePasswordEnabled)" style="margin-top: 20px;" @onclick="ChangePassword">Изменить</button>
+
+    </div>*@
+
+    <button class="btn btn-primary" style="margin-top: 20px;" @onclick="Logout">Выйти</button>
+</div>
+
+@code {
+    private AccountService _accountService;
+
+    private ProfileModel profileModel;
+
+    private string eyeImageURL = "Images/EyeView128.png";
+
+    private bool focusInputName = false;
+    private bool showErrorMessageInputName = false;
+    private bool validInputName = false;
+    private string textErrorMessageInputName = "";
+
+    private bool showOldPassword = false;
+    private bool focusInputOldPassword = false;
+    private bool showErrorMessageInputOldPassword = false;
+    private bool validInputOldPassword = false;
+    private string textErrorMessageInputOldPassword = "";
+
+    private bool isButtonSaveEnabled = true;
+    private bool isButtonChangePasswordEnabled = true;
+    private bool isProfileNameEnabled = true;
+
+    private string? tokenAccess { get; set; }
+
+
+    protected override async void OnInitialized()
+    {
+        _accountService = new AccountService(JSRuntime);
+
+        profileModel = new ProfileModel();
+    }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            tokenAccess = await _accountService.GetTokenAccessAsync();
+
+            var responseGroups = await Services.ScheduleAPIService.GetGroups(1, 1); // заменить на реальные данные
+
+            var profileInfoResponse = await Services.ScheduleAPIService.Account.GetProfileInfoAsync(tokenAccess);
+
+            if (profileInfoResponse is not null)
+            {
+                profileModel.Name = profileInfoResponse.Name;
+
+                
+
+                //if (profileModel.UserRoleId == )
+            }
+
+            StateHasChanged();
+        }
+    }
+
+    private void ChangePassword(MouseEventArgs e)
+    {
+
+    }
+
+    private async void SaveProfile(MouseEventArgs e)
+    {
+        isButtonSaveEnabled = false;
+
+        try
+        {
+            if (!string.IsNullOrEmpty(profileModel.Name))
+            {
+                await Services.ScheduleAPIService.Account.SaveProfileInfoAsync(tokenAccess, name: profileModel.Name);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex.ToString());
+        }
+
+        isButtonSaveEnabled = true;
+
+        StateHasChanged();
+
+    }
+
+    private void Logout(MouseEventArgs e)
+    {
+        _accountService.Logout();
+        NavigationManager.NavigateTo("/auth");
+    }
+
+    private void HandelFocusInputName()
+    {
+        focusInputName = true;
+    }
+
+    private void HandelBlurInputName()
+    {
+        focusInputName = false;
+
+        CheckValidDataName();
+    }
+    private void HandelFocusInputOldPassword()
+    {
+        focusInputOldPassword = true;
+    }
+
+    private void HandelBlurInputOldPassword()
+    {
+        focusInputOldPassword = false;
+
+        CheckValidDataOldPassword();
+
+    }
+
+    private void ToggleOldPasswordVisibility()
+    {
+        showOldPassword = !showOldPassword;
+
+        if (showOldPassword)
+        {
+            eyeImageURL = "Images/EyeHide128.png";
+        }
+        else
+        {
+            eyeImageURL = "Images/EyeView128.png";
+        }
+    }
+
+
+    private void CheckValidDataName()
+    {
+        if (string.IsNullOrEmpty(profileModel.Name))
+        {
+            showErrorMessageInputName = true;
+            textErrorMessageInputName = "Не указано имя!";
+            validInputName = false;
+        }
+        else
+        {
+            showErrorMessageInputName = false;
+            textErrorMessageInputName = "";
+            validInputName = true;
+        }
+    }
+    private void CheckValidDataOldPassword()
+    {
+        if (string.IsNullOrEmpty(profileModel.OldPassword))
+        {
+            showErrorMessageInputOldPassword = true;
+            textErrorMessageInputOldPassword = "Не введен пароль!";
+        }
+        else
+        {
+            showErrorMessageInputOldPassword = false;
+            textErrorMessageInputOldPassword = "";
+            validInputOldPassword = true;
+        }
+    }
+
+
+
+    private string GetOldPasswordInputType()
+    {
+        return showOldPassword ? "text" : "OldPassword";
+    }
+}

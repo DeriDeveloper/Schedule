@@ -1,6 +1,6 @@
-﻿using System.Diagnostics;
+﻿using Newtonsoft.Json;
+using System.Diagnostics;
 using System.Net;
-using System.Text.Json.Serialization;
 using WebApp.Models;
 
 namespace WebApp.Services
@@ -9,6 +9,61 @@ namespace WebApp.Services
     {
         private static readonly string urlAPI = "http://localhost:5045/api";
 
+
+        public static async Task<List<ResponseGroup>?> GetGroups(int collegeId, int year)
+        {
+            try
+            {
+                var client = new HttpClient();
+                var request = new HttpRequestMessage(HttpMethod.Get, $"{urlAPI}/groups/Get?collegeId={collegeId}&year={year}");
+                var response = await client.SendAsync(request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+
+                    return JsonConvert.DeserializeObject<List<ResponseGroup>>(responseContent);
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+                return null;
+            }
+        }
+        public static async Task<bool> ValidTokenAsync(string token)
+        {
+            try
+            {
+                var client = new HttpClient();
+                var request = new HttpRequestMessage(HttpMethod.Get, $"{urlAPI}/TokenValidation?token={token}");
+                var response = await client.SendAsync(request);
+
+                if(response.StatusCode == HttpStatusCode.OK)
+                {
+                    return true;
+
+                }
+                else if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    return false;
+                }
+                else
+                {
+                    // Записывать все данные о результате мб сломалось что то на стороне сервера
+                    return false;
+                }
+            }
+            catch(Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+                return false;
+            }
+        }
 
         public static async Task<(HttpStatusCode? status, ResponseAuth? response)> AuthorizationAsync(string login, string password)
         {
@@ -46,6 +101,42 @@ namespace WebApp.Services
             {
                 Debug.WriteLine(ex.ToString());
                 return (status: null, response: null);
+            }
+        }
+    
+        
+
+        public class Account
+        {
+            public static async Task<ProfileInfoResponse?> GetProfileInfoAsync(string token)
+            {
+                var client = new HttpClient();
+                var request = new HttpRequestMessage(HttpMethod.Get, $"{urlAPI}/account/GetProfileInfo?accessToken={token}");
+                var response = await client.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+
+                    return JsonConvert.DeserializeObject<ProfileInfoResponse>(responseContent);
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            public static async Task<bool?> SaveProfileInfoAsync(string token, string name)
+            {
+                var client = new HttpClient();
+                var request = new HttpRequestMessage(HttpMethod.Post, $"{urlAPI}/account/SaveProfileInfo?accessToken={token}&name={name}");
+                var response = await client.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
         }
     }

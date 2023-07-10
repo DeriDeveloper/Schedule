@@ -11,8 +11,9 @@
 
 
 <div style="width:300px; padding:10px; margin: 0 auto;">
-    <h3 class="text-center">Авторизация</h3>
-    <div style="margin-top:20px;">
+    <div class="container-block  pd-20">
+        <h3 class="text-center">Авторизация</h3>
+        <div style="margin-top:20px;">
             <div class="block-input">
                 <label>Логин</label>
                 <div class="container-input @(focusInputLogin ? "container-input-focus": "")" >
@@ -38,11 +39,16 @@
             </div>
             <button class="btn btn-primary" disabled="@(!isButtonSignInEnabled)" style="margin-top: 20px;" @onclick="SignIn">Войти</button>
             <p class="warning-color" style="margin: 0; margin-top: 15px; @(showGlobalMessage ? "visibility: visible;" : "visibility: collapse;")">@(textGlobalMessage)</p>
+        </div>
     </div>
 </div>
 
 
 @code {
+    private CookieHelperService _cookieHelperService;
+    private AccountService _accountService;
+
+
     private string urlRedirect = "";
 
     private bool showPassword = false;
@@ -63,15 +69,55 @@
 
     private LoginModel loginModel = new LoginModel();
 
-
-    protected override void OnInitialized()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (firstRender)
+        {
+            var tokenAccess = await _cookieHelperService.GetTokenAccessAsync();
+
+            if (!string.IsNullOrEmpty(tokenAccess))
+            {
+                await IsUserAuthenticatedAsync(tokenAccess);
+            }
+        }
+    }
+
+    protected override async void OnInitialized()
+    {
+
+        _cookieHelperService = new CookieHelperService(JSRuntime);
+        _accountService = new AccountService(JSRuntime);
+
         var uri = new Uri(NavigationManager.Uri);
         var urlRedirect = System.Web.HttpUtility.ParseQueryString(uri.Query).Get("urlRedirect");
 
         if (!string.IsNullOrEmpty(urlRedirect))
         {
             this.urlRedirect = urlRedirect;
+        }
+
+
+    }
+
+    private async Task IsUserAuthenticatedAsync(string token)
+    {
+        var statusValidToken = await Services.ScheduleAPIService.ValidTokenAsync(token);
+
+        if (statusValidToken)
+        {
+            if (string.IsNullOrEmpty(this.urlRedirect))
+            {
+                NavigationManager.NavigateTo("/profile");
+            }
+            else
+            {
+                NavigationManager.NavigateTo(this.urlRedirect);
+            }
+        }
+        else
+        {
+            _accountService.Logout();
+            NavigationManager.NavigateTo("/auth");
         }
     }
 
@@ -81,51 +127,57 @@
 
         try
         {
-            var response = await ScheduleAPIService.AuthorizationAsync(loginModel.Login, loginModel.Password);
-
-            var status = response.status;
-
-            if (status == System.Net.HttpStatusCode.OK)
+            if (!validInputLogin || !validInputPassword)
             {
-                var token = response.response?.Token;
-
-                if (string.IsNullOrEmpty(token))
-                {
-                    throw new ArgumentNullException(nameof(token), "Значение токена не может быть пыстым или равным null.");
-                }
-
-
-
-                #region Заменить изменение token в cookie с помощью  HttpContextAccessor.HttpContext.Response.Cookies (не дает потому что "web socket" status: 101)
-
-                await JSRuntime.InvokeVoidAsync("eval", $"document.cookie = 'TokenAccess={token}; expires={DateTime.UtcNow.AddMonths(6).ToString("R")}; path=/';");
-
-
-                /*var option = new CookieOptions();
-                option.Expires = DateTime.Now.AddMonths(6); 
-                option.IsEssential = true;
-                option.Secure = true;
-
-                HttpContextAccessor.HttpContext.Response.Cookies.Append("TokenAccess", token, option);*/
-                #endregion
-
-                if (!string.IsNullOrEmpty(this.urlRedirect))
-                {
-                    NavigationManager.NavigateTo(this.urlRedirect);
-                }
-                else
-                {
-                    NavigationManager.NavigateTo("/Profile");
-                }
-                var foo = 0;
-            }
-            else if (status == System.Net.HttpStatusCode.NotFound)
-            {
-                UserNotFound();
+                ShowGlobalMessage("Исправьте ошибки!");
             }
             else
             {
-                ShowGlobalMessage("Произошла неизвестная ошибка, попробуйте еще раз!");
+                var response = await ScheduleAPIService.AuthorizationAsync(loginModel.Login, loginModel.Password);
+
+                var status = response.status;
+
+                if (status == System.Net.HttpStatusCode.OK)
+                {
+                    var token = response.response?.Token;
+
+                    if (string.IsNullOrEmpty(token))
+                    {
+                        throw new ArgumentNullException(nameof(token), "Значение токена не может быть пыстым или равным null.");
+                    }
+
+
+
+                    #region Заменить изменение token в cookie с помощью  HttpContextAccessor.HttpContext.Response.Cookies (не дает потому что "web socket" status: 101)
+
+                    await _cookieHelperService.UpdateTokenAccessAsync(token);
+
+                    /*var option = new CookieOptions();
+                    option.Expires = DateTime.Now.AddMonths(6); 
+                    option.IsEssential = true;
+                    option.Secure = true;
+
+                    HttpContextAccessor.HttpContext.Response.Cookies.Append("TokenAccess", token, option);*/
+                    #endregion
+
+                    if (!string.IsNullOrEmpty(this.urlRedirect))
+                    {
+                        NavigationManager.NavigateTo(this.urlRedirect);
+                    }
+                    else
+                    {
+                        NavigationManager.NavigateTo("/Profile");
+                    }
+                    var foo = 0;
+                }
+                else if (status == System.Net.HttpStatusCode.NotFound)
+                {
+                    UserNotFound();
+                }
+                else
+                {
+                    ShowGlobalMessage("Произошла неизвестная ошибка, попробуйте еще раз!");
+                }
             }
         }
         catch (Exception ex)

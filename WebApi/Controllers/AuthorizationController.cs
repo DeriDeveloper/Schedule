@@ -42,6 +42,16 @@ namespace WebApi.Controllers
             {
                 var token = JwtHelperService.GenerateToken(user.Login, 1);
 
+                _context.UserAccessTokens.Add(
+                    new UserAccessToken
+                    {
+                        Guid = Guid.NewGuid(),
+                        UserId = user.Id,
+                        Token = token,
+                         DateCreated = DateTime.UtcNow
+                    });
+                await _context.SaveChangesAsync();
+
 
                 return new ResponseAuth()
                 {

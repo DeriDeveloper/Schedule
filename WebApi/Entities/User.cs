@@ -17,5 +17,7 @@ public partial class User
 
     public int UserRoleId { get; set; }
 
+    public virtual ICollection<UserAccessToken> UserAccessTokens { get; set; } = new List<UserAccessToken>();
+
     public virtual UserRole UserRole { get; set; } = null!;
 }

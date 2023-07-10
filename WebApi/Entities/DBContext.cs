@@ -23,7 +23,7 @@ public partial class DBContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer(Program.config.GetConnectionString("DBConnectionString"));
+         => optionsBuilder.UseSqlServer(Program.config.GetConnectionString("DBConnectionString"));
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -39,9 +39,12 @@ public partial class DBContext : DbContext
 
         modelBuilder.Entity<UserAccessToken>(entity =>
         {
-            entity.HasNoKey();
+            entity.HasKey(e => e.Guid);
 
-            entity.HasOne(d => d.User).WithMany()
+            entity.Property(e => e.Guid).ValueGeneratedNever();
+            entity.Property(e => e.DateCreated).HasColumnType("datetime");
+
+            entity.HasOne(d => d.User).WithMany(p => p.UserAccessTokens)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_UserAccessTokens_Users");

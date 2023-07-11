@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using NuGet.Common;
 using System.Net.Http;
 using WebApi.Entities;
@@ -35,11 +36,43 @@ namespace WebApi.Controllers.Account
 
             var userId = userAccessToken.UserId;
 
-            var user = _context.Users.Find(userId);
+            var user = await _context.Users.FindAsync(userId);
 
-            if(user is null)
+            if (user is null)
             {
                 return NotFound();
+            }
+
+
+            var userRoleStudent = await _context.UserRoles.FirstAsync(x => x.Name.ToLower().Trim() == "студент");
+
+            if (userRoleStudent is not null)
+            {
+                if (user.UserRoleId == userRoleStudent.Id)
+                {
+                    if (user.StudentDetails is null)
+                    {
+                        user.StudentDetails = new List<StudentDetail>();
+                    }
+
+                    var studentDetail = _context.StudentDetails
+                        .Where(x=>x.UserId == user.Id)
+                        .Select(x => new
+                        {
+                            groupId = x.GroupId,
+                            group = x.Group
+                        })
+                        .FirstOrDefault();
+
+                    if (studentDetail is not null)
+                    {
+                        user.StudentDetails.Add(new StudentDetail()
+                        {
+                            GroupId = studentDetail.groupId,
+                            Group = studentDetail.group
+                        });
+                    }
+                }
             }
 
 
@@ -47,6 +80,11 @@ namespace WebApi.Controllers.Account
             {
                 Name = user.Name
             };
+
+            if(user.StudentDetails?.Count > 0)
+            {
+                profileInfoResponse.StudentDetail = user.StudentDetails.First();
+            }
 
 
             return Ok(profileInfoResponse);

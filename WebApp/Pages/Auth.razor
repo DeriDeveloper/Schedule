@@ -22,7 +22,10 @@
                     </div>
                     <input type="text" @onfocus="HandelFocusInputLogin" @onblur="HandelBlurInputLogin" @bind="@loginModel.Login" />
                 </div>
-                <p class="warning-color" style="margin: 0; @(showErrorMessageInputLogin ? "visibility: visible;" : "visibility: collapse;")">@(textErrorMessageInputLogin)</p>
+                @if (showErrorMessageInputLogin)
+                {
+                    <p class="warning-color" style="margin: 0; ">@(textErrorMessageInputLogin)</p>
+                }
             </div>
             <div class="block-input">
                 <label>Пароль</label>
@@ -35,10 +38,16 @@
                         <img src="@eyeImageURL" @onclick="TogglePasswordVisibility" style="max-height:100%;max-width:100%; cursor:pointer;" />
                     </div>
                 </div>
-                <p class="warning-color" style="margin: 0; @(showErrorMessageInputPassword ? "visibility: visible;" : "visibility: collapse;")">@(textErrorMessageInputPassword)</p>
+                @if (showErrorMessageInputPassword)
+                {
+                    <p class="warning-color" style="margin: 0; ">@(textErrorMessageInputPassword)</p>
+                }
             </div>
             <button class="btn btn-primary" disabled="@(!isButtonSignInEnabled)" style="margin-top: 20px;" @onclick="SignIn">Войти</button>
-            <p class="warning-color" style="margin: 0; margin-top: 15px; @(showGlobalMessage ? "visibility: visible;" : "visibility: collapse;")">@(textGlobalMessage)</p>
+            @if (showGlobalMessage)
+            {
+                <p class="warning-color" style="margin: 0; margin-top: 15px; ">@(textGlobalMessage)</p>
+            }
         </div>
     </div>
 </div>

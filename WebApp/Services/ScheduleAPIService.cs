@@ -10,6 +10,36 @@ namespace WebApp.Services
         private static readonly string urlAPI = "http://localhost:5045/api";
 
 
+        public static async Task<List<College>> GetCollegesAsync()
+        {
+            try
+            {
+                var client = new HttpClient();
+                var request = new HttpRequestMessage(HttpMethod.Get, $"{urlAPI}/colleges/Get");
+                var response = await client.SendAsync(request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+
+
+                    var colleges = JsonConvert.DeserializeObject<List<College>>(responseContent);
+
+                    if (colleges is not null)
+                        return colleges;
+                    else return new List<College>();
+                }
+                else
+                {
+                    return new List<College>();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+                return new List<College>();
+            }
+        }
         public static async Task<List<ResponseGroup>?> GetGroups(int collegeId, int year)
         {
             try
@@ -124,10 +154,10 @@ namespace WebApp.Services
                     return null;
                 }
             }
-            public static async Task<bool?> SaveProfileInfoAsync(string token, string name)
+            public static async Task<bool?> SaveProfileInfoAsync(string token, string name, int collegeId, int groupId)
             {
                 var client = new HttpClient();
-                var request = new HttpRequestMessage(HttpMethod.Post, $"{urlAPI}/account/SaveProfileInfo?accessToken={token}&name={name}");
+                var request = new HttpRequestMessage(HttpMethod.Post, $"{urlAPI}/account/SaveProfileInfo?accessToken={token}&name={name}&collegeId={collegeId}&groupId={groupId}");
                 var response = await client.SendAsync(request);
                 if (response.IsSuccessStatusCode)
                 {

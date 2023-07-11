@@ -19,6 +19,8 @@ public partial class DBContext : DbContext
 
     public virtual DbSet<Group> Groups { get; set; }
 
+    public virtual DbSet<StudentDetail> StudentDetails { get; set; }
+
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<UserAccessToken> UserAccessTokens { get; set; }
@@ -26,7 +28,6 @@ public partial class DBContext : DbContext
     public virtual DbSet<UserRole> UserRoles { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
          => optionsBuilder.UseSqlServer(Program.config.GetConnectionString("DBConnectionString"));
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -37,6 +38,19 @@ public partial class DBContext : DbContext
                 .HasForeignKey(d => d.CollegeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Groups_Colleges");
+        });
+
+        modelBuilder.Entity<StudentDetail>(entity =>
+        {
+            entity.HasOne(d => d.Group).WithMany(p => p.StudentDetails)
+                .HasForeignKey(d => d.GroupId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_StudentDetails_Groups");
+
+            entity.HasOne(d => d.User).WithMany(p => p.StudentDetails)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_StudentDetails_Users");
         });
 
         modelBuilder.Entity<User>(entity =>

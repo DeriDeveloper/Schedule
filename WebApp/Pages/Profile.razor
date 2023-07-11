@@ -8,9 +8,22 @@
 
 
 <div class="container-block pd-20">
-    <h3>Профиль</h3>
+    <h3 style="text-align:center;">Профиль</h3>
 
     <div>
+        <div class="block-input">
+            <div class="container-avatar" style="width:150px; height:150px;">
+                <div style="">
+                    <img style="max-width: 100%; max-height: 100%;" src="@(urlProfileAvatar)" />
+                </div>
+
+                <div style="background-color:#60000000;">
+
+                </div>
+            </div>
+            <p class="warning-color" style="margin: 0; @(showErrorMessageInputName ? "visibility: visible;" : "visibility: collapse;")">@(textErrorMessageInputName)</p>
+        </div>
+
         <div class="block-input">
             <label>Имя</label>
             <div class="container-input @(focusInputName ? "container-input-focus": "")">
@@ -18,6 +31,55 @@
             </div>
             <p class="warning-color" style="margin: 0; @(showErrorMessageInputName ? "visibility: visible;" : "visibility: collapse;")">@(textErrorMessageInputName)</p>
         </div>
+
+        <div class="block-input">
+            <label>Колледж</label>
+            <div class="container-input @(focusInputCollege ? "container-input-focus": "")">
+                <select @onchange="HandleCollegeSelectChange" @onfocus="HandelFocusInputCollege" @onblur="HandelBlurInputCollege">
+                    <option selected value=""></option>
+                    @foreach (var college in Colleges)
+                    {
+                        @if (college.Id == selectedCollegeId)
+                        {
+                            <option value="@college.Id" selected>@college.Name</option>
+                        }
+                        else
+                        {
+                            <option value="@college.Id">@college.Name</option>
+                        }
+                    }
+               </select>
+            </div>
+            @if (showErrorMessageInputCollege)
+            {
+                <p class="warning-color" style="margin: 0; ">@(textErrorMessageInputCollege)</p>
+            }
+        </div>
+
+        <div class="block-input">
+            <label>Группа</label>
+            <div class="container-input @(focusInputGroup ? "container-input-focus": "")">
+                <select @onchange="HandleGroupSelectChange" @onfocus="HandelFocusInputGroup" @onblur="HandelBlurInputGroup">
+                    <option selected value=""></option>
+                    @foreach (var group in Groups)
+                    {
+                        @if (group.Id == selectedGroupId)
+                        {
+                            <option value="@group.Id" selected>@group.Name</option>
+                        }
+                        else
+                        {
+                            <option value="@group.Id">@group.Name</option>
+                        }
+                    }
+                </select>
+            </div>
+            @if (showErrorMessageInputGroup){
+                <p class="warning-color" style="margin: 0;">@(textErrorMessageInputGroup)</p>
+            }
+        </div>
+
+
 
         <button class="btn btn-primary" disabled="@(!isButtonSaveEnabled)" style="margin-top: 20px;" @onclick="SaveProfile">Сохранить</button>
 
@@ -57,6 +119,18 @@
     private bool validInputName = false;
     private string textErrorMessageInputName = "";
 
+
+    private bool focusInputCollege = false;
+    private bool showErrorMessageInputCollege = false;
+    private bool validInputCollege = false;
+    private string textErrorMessageInputCollege = "";
+
+
+    private bool focusInputGroup = false;
+    private bool showErrorMessageInputGroup = false;
+    private bool validInputGroup = false;
+    private string textErrorMessageInputGroup = "";
+
     private bool showOldPassword = false;
     private bool focusInputOldPassword = false;
     private bool showErrorMessageInputOldPassword = false;
@@ -68,6 +142,16 @@
     private bool isProfileNameEnabled = true;
 
     private string? tokenAccess { get; set; }
+
+
+    private string urlProfileAvatar { get; set; } = "https://sun136-1.userapi.com/s/v1/ig2/P1NBCyJcCgQqY-DEkHtsHgwGtNcym_FQok1fS6xjrfnfn9HLtTGHIIKP3DJk0_xlUI-QnwgCfSfSwBCViGLNpLf_.jpg?size=200x200&quality=96&crop=222,424,832,832&ava=1";
+
+    private List<College> Colleges { get; set; } = new List<College>();
+    private int selectedCollegeId { get; set; }
+
+    private List<Group> Groups { get; set; } = new List<Group>();
+    private int selectedGroupId { get; set; }
+
 
 
     protected override async void OnInitialized()
@@ -84,7 +168,9 @@
         {
             tokenAccess = await _accountService.GetTokenAccessAsync();
 
-            var responseGroups = await Services.ScheduleAPIService.GetGroups(1, 1); // заменить на реальные данные
+            Colleges = await Services.ScheduleAPIService.GetCollegesAsync();
+
+            //var responseGroups = await Services.ScheduleAPIService.GetGroups(1, 1); // заменить на реальные данные
 
             var profileInfoResponse = await Services.ScheduleAPIService.Account.GetProfileInfoAsync(tokenAccess);
 
@@ -92,9 +178,23 @@
             {
                 profileModel.Name = profileInfoResponse.Name;
 
-                
+                if(profileInfoResponse.StudentDetail is not null)
+                {
+                    if (profileInfoResponse.StudentDetail.GroupId > 0)
+                    {
+                        selectedGroupId = profileInfoResponse.StudentDetail.GroupId;
+                    }
 
-                //if (profileModel.UserRoleId == )
+                    if (profileInfoResponse.StudentDetail.Group is not null)
+                    {
+                        if (profileInfoResponse.StudentDetail.Group.CollegeId > 0)
+                        {
+                            selectedCollegeId = profileInfoResponse.StudentDetail.Group.CollegeId;
+
+                            await UploadGroupSelectAsync();
+                        }
+                    }
+                }
             }
 
             StateHasChanged();
@@ -106,6 +206,83 @@
 
     }
 
+
+
+    private async void HandleGroupSelectChange(ChangeEventArgs e)
+    {
+        showErrorMessageInputGroup = false;
+
+
+        if (string.IsNullOrEmpty(e.Value as string))
+        {
+            textErrorMessageInputGroup = "Группа не выбрана!";
+            showErrorMessageInputGroup = true;
+            return;
+        }
+
+        selectedGroupId = int.Parse((string)e.Value);
+
+    }
+
+    private async void HandleCollegeSelectChange(ChangeEventArgs e)
+    {
+        showErrorMessageInputCollege = false;
+
+        selectedGroupId = 0;
+
+        Groups = new List<Group>();
+
+
+        if (string.IsNullOrEmpty(e.Value as string))
+        {
+            textErrorMessageInputCollege = "Колледж не выбран!";
+            showErrorMessageInputCollege = true;
+            return;
+        }
+        selectedCollegeId = int.Parse((string)e.Value);
+
+        await UploadGroupSelectAsync();
+
+        StateHasChanged();
+    }
+
+    private async Task UploadGroupSelectAsync()
+    {
+        var dateNow = DateTime.Now;
+
+        var currentYear = dateNow.Year;
+        var currentMonth = dateNow.Month;
+
+        int resultYear = 0;
+
+        if (currentMonth > 8)
+        {
+            resultYear = currentYear;
+        }
+        else
+        {
+            resultYear = currentYear - 1;
+        }
+
+        var responseGroups = await Services.ScheduleAPIService.GetGroups(selectedCollegeId, resultYear);
+
+        Groups = new List<Group>();
+
+        if (responseGroups is not null)
+        {
+            foreach (var responseGroup in responseGroups)
+            {
+                Groups.Add(new Group()
+                    {
+                        Id = responseGroup.Id,
+                        CollegeId = responseGroup.CollegeId,
+                        Name = responseGroup.Name,
+                        Year = responseGroup.Year,
+                    });
+            }
+        }
+    }
+
     private async void SaveProfile(MouseEventArgs e)
     {
         isButtonSaveEnabled = false;
@@ -114,7 +291,7 @@
         {
             if (!string.IsNullOrEmpty(profileModel.Name))
             {
-                await Services.ScheduleAPIService.Account.SaveProfileInfoAsync(tokenAccess, name: profileModel.Name);
+                await Services.ScheduleAPIService.Account.SaveProfileInfoAsync(tokenAccess, name: profileModel.Name, collegeId: selectedCollegeId, groupId: selectedGroupId);
             }
         }
         catch (Exception ex)
@@ -132,6 +309,26 @@
     {
         _accountService.Logout();
         NavigationManager.NavigateTo("/auth");
+    }
+
+    private void HandelFocusInputCollege()
+    {
+        focusInputCollege = true;
+    }
+
+    private void HandelBlurInputCollege()
+    {
+        focusInputCollege = false;
+    }
+
+    private void HandelFocusInputGroup()
+    {
+        focusInputGroup = true;
+    }
+
+    private void HandelBlurInputGroup()
+    {
+        focusInputGroup = false;
     }
 
     private void HandelFocusInputName()

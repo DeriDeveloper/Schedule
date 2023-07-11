@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using WebApi.Entities;
 using WebApi.Models;
 
@@ -16,7 +17,7 @@ namespace WebApi.Controllers.Account
         }
 
         [HttpPost]
-        public async Task<IActionResult> OnPost(string accessToken, string? name)
+        public async Task<IActionResult> OnPost(string accessToken, string? name, int? collegeId, int? groupId)
         {
             if (accessToken is null)
             {
@@ -37,6 +38,29 @@ namespace WebApi.Controllers.Account
             if (user is null)
             {
                 return NotFound();
+            }
+            var userRoleStudent = await _context.UserRoles.FirstAsync(x => x.Name.ToLower().Trim() == "студент");
+
+            if (userRoleStudent is not null)
+            {
+                if (user.UserRoleId == userRoleStudent.Id)
+                {
+                    if(collegeId is not null && groupId is not null)
+                    {
+                        var studentDetail = _context.StudentDetails.FirstOrDefault(x=>x.UserId == user.Id);
+
+                        if (studentDetail is not null)
+                        {
+                            studentDetail.GroupId = (int)groupId;
+
+                            _context.SaveChanges();
+                        }
+                    }
+                    else
+                    {
+                        return BadRequest(new {message= "collegeId или groupId не указан!" });
+                    }
+                }
             }
 
             if (!string.IsNullOrEmpty(name))

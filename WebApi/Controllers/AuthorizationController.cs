@@ -38,7 +38,7 @@ namespace WebApi.Controllers
                 return NotFound();
             }
 
-            if (PasswordHashService.VerifyHash(model.Password, user.HashPassword))
+            if (HashService.VerifyHash(model.Password, user.HashPassword))
             {
                 var token = JwtHelperService.GenerateToken(user.Login, 1);
 

@@ -17,6 +17,10 @@ public partial class User
 
     public int UserRoleId { get; set; }
 
+    public int? AvatarProfileFileMetadatumId { get; set; }
+
+    public virtual FileMetadatum? AvatarProfileFileMetadatum { get; set; }
+
     public virtual ICollection<StudentDetail> StudentDetails { get; set; } = new List<StudentDetail>();
 
     public virtual ICollection<UserAccessToken> UserAccessTokens { get; set; } = new List<UserAccessToken>();

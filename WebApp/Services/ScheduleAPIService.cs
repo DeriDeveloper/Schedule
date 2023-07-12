@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.AspNetCore.Components.Forms;
+using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Net;
 using WebApp.Models;
@@ -9,7 +10,37 @@ namespace WebApp.Services
     {
         private static readonly string urlAPI = "http://localhost:5045/api";
 
+        const long maxFileSize = 10 * 1024 * 1024;
 
+        public static async Task<object> UploadFile(string token, IBrowserFile file, long maxFileSize = maxFileSize)
+        {
+            using (var httpClient = new HttpClient())
+            {
+                using (var content = new MultipartFormDataContent())
+                {
+                    using (var readStream = file.OpenReadStream(maxFileSize))
+                    {
+                        var streamContent = new StreamContent(readStream);
+                        streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+                        content.Add(streamContent, "file", file.Name);
+
+                        var response = await httpClient.PostAsync($"{urlAPI}/files/Upload?accessToken={token}", content);
+
+                        // Обработка ответа от сервера
+                        if (response.IsSuccessStatusCode)
+                        {
+                            // Реагирование на успешный ответ
+                            return null;
+                        }
+                        else
+                        {
+                            // Реагирование на неуспешный ответ
+                            return null;
+                        }
+                    }
+                }
+            }
+        }
         public static async Task<List<College>> GetCollegesAsync()
         {
             try

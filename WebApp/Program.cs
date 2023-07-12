@@ -6,6 +6,8 @@ namespace WebApp
 {
     public class Program
     {
+        public const string UrlAPI = "http://localhost:5045/api";
+
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);

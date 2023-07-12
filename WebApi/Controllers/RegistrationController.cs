@@ -30,7 +30,7 @@ namespace WebApi.Controllers
 
             var userRole = await _context.UserRoles.FirstOrDefaultAsync(x=>x.Name.ToLower() == "студент");
 
-            var hashPassword = PasswordHashService.HashPassword(model.Password);
+            var hashPassword = HashService.Hash(model.Password);
 
             user = new User()
             {

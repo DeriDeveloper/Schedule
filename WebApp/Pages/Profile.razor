@@ -1,9 +1,11 @@
 ﻿@page "/profile"
 @using System.Diagnostics;
+@using Microsoft.AspNetCore.Http;
 @using WebApp.Models;
 @using WebApp.Services;
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
+@inject IWebHostEnvironment Environment
 
 
 
@@ -11,17 +13,18 @@
     <h3 style="text-align:center;">Профиль</h3>
 
     <div>
-        <div class="block-input">
-            <div class="container-avatar" style="width:150px; height:150px;">
-                <div style="">
-                    <img style="max-width: 100%; max-height: 100%;" src="@(urlProfileAvatar)" />
+        <div class="block-input" style="display: flex; flex-direction: column; align-content: center; justify-content: center; align-items: center;">
+            <div style="max-width:150px;">
+                <div class="container-avatar" style="width:150px; height:150px;">
+                    <div style="" @onclick="UploadAvatarProfileButtonClick">
+                        <img style="max-width: 100%; max-height: 100%;" src="@(urlProfileAvatar)" />
+                    </div>
                 </div>
-
                 <div style="background-color:#60000000;">
-
+                    <InputFile multiple OnChange="@HandleFileInputAvatarProfile" />
                 </div>
+                <p class="warning-color" style="margin: 0; @(showErrorMessageInputName ? "visibility: visible;" : "visibility: collapse;")">@(textErrorMessageInputName)</p>
             </div>
-            <p class="warning-color" style="margin: 0; @(showErrorMessageInputName ? "visibility: visible;" : "visibility: collapse;")">@(textErrorMessageInputName)</p>
         </div>
 
         <div class="block-input">
@@ -144,7 +147,7 @@
     private string? tokenAccess { get; set; }
 
 
-    private string urlProfileAvatar { get; set; } = "https://sun136-1.userapi.com/s/v1/ig2/P1NBCyJcCgQqY-DEkHtsHgwGtNcym_FQok1fS6xjrfnfn9HLtTGHIIKP3DJk0_xlUI-QnwgCfSfSwBCViGLNpLf_.jpg?size=200x200&quality=96&crop=222,424,832,832&ava=1";
+    private string urlProfileAvatar { get; set; }
 
     private List<College> Colleges { get; set; } = new List<College>();
     private int selectedCollegeId { get; set; }
@@ -152,6 +155,9 @@
     private List<Group> Groups { get; set; } = new List<Group>();
     private int selectedGroupId { get; set; }
 
+
+    private ElementReference fileInputAvatarProfile;
+    private List<IBrowserFile> loadedFiles = new();
 
 
     protected override async void OnInitialized()
@@ -177,6 +183,7 @@
             if (profileInfoResponse is not null)
             {
                 profileModel.Name = profileInfoResponse.Name;
+                urlProfileAvatar = $"{Program.UrlAPI}/images/get/{profileInfoResponse.ProfileAvatarName}";
 
                 if(profileInfoResponse.StudentDetail is not null)
                 {
@@ -199,6 +206,53 @@
 
             StateHasChanged();
         }
+    }
+
+    private async void UploadAvatarProfileButtonClick()
+    {
+        //await JSRuntime.InvokeVoidAsync("clickElement", fileInputAvatarProfile);
+    }
+
+    private async void HandleFileInputAvatarProfile(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            loadedFiles.Clear();
+            
+            var maxAllowedFiles = 1;
+            var maxFileSize = 10 * 1024 * 1024;
+
+            foreach (var file in e.GetMultipleFiles(maxAllowedFiles))
+            {
+                try
+                {
+                    await Services.ScheduleAPIService.UploadFile(tokenAccess ,file, maxFileSize: maxFileSize);
+
+                    var profileInfoResponse = await Services.ScheduleAPIService.Account.GetProfileInfoAsync(tokenAccess);
+
+                    if (profileInfoResponse is not null)
+                    {
+                        urlProfileAvatar = $"{Program.UrlAPI}/images/get/{profileInfoResponse.ProfileAvatarName}";
+                    }
+
+                    StateHasChanged();
+
+                }
+                catch (Exception ex)
+                {
+                    
+                }
+            }
+
+
+            var foo = 0;
+
+        }
+        catch (Exception ex)
+        {
+            
+        }
+
     }
 
     private void ChangePassword(MouseEventArgs e)

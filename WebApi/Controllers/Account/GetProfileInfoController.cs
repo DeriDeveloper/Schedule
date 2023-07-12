@@ -69,7 +69,7 @@ namespace WebApi.Controllers.Account
                         user.StudentDetails.Add(new StudentDetail()
                         {
                             GroupId = studentDetail.groupId,
-                            Group = studentDetail.group
+                            Group = studentDetail.group,
                         });
                     }
                 }
@@ -78,8 +78,15 @@ namespace WebApi.Controllers.Account
 
             var profileInfoResponse = new ProfileInfoResponse()
             {
-                Name = user.Name
+                Name = user.Name,
             };
+
+            user.AvatarProfileFileMetadatum = await _context.FileMetadata.FirstAsync(x => x.Id == user.AvatarProfileFileMetadatumId);
+
+            if (user.AvatarProfileFileMetadatum is not null)
+            {
+                profileInfoResponse.ProfileAvatarName = user.AvatarProfileFileMetadatum.Name;
+            }
 
             if(user.StudentDetails?.Count > 0)
             {

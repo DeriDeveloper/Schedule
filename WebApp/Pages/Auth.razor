@@ -78,16 +78,25 @@
 
     private LoginModel loginModel = new LoginModel();
 
+
+
+    [CascadingParameter]
+    public MainLayout Layout { get; set; }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
+            ((MainLayout)Layout).ShowLoadingScreen();
+
             var tokenAccess = await _cookieHelperService.GetTokenAccessAsync();
 
             if (!string.IsNullOrEmpty(tokenAccess))
             {
                 await IsUserAuthenticatedAsync(tokenAccess);
             }
+
+            ((MainLayout)Layout).HideLoadingScreen();
         }
     }
 

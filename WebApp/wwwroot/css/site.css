@@ -1,7 +1,37 @@
 @import url('open-iconic/font/css/open-iconic-bootstrap.min.css');
 
+@font-face {
+    font-family: 'Default';
+    src: url('../Fonts/Fairymuffinroundpop.ttf') format('truetype');
+    /* Дополнительные свойства шрифта, такие как размер и начертание */
+}
+
+a, p, h1, h2, h3, h4, h5, h6, input,select, label {
+    font-family: 'Default';
+}
+
+
+.spash-screen-container {
+    /*animation-name: spash-screen-container-animation;*/
+    animation-duration: .1s;
+    justify-content: center;
+    display: flex;
+    align-items: center;
+}
+
+@keyframes spash-screen-container-animation {
+    0%{
+        opacity:0;
+        /*display: flex;*/
+    }
+    100% {
+        opacity: 1;
+        /*display:none;*/
+    }
+}
+
 html, body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: 'Default';
 }
 
 h1:focus {
@@ -164,4 +194,18 @@ select:active {
 .container-avatar {
     border-radius: 100%;
     overflow: hidden;
+}
+
+a {
+    text-decoration: none;
+}
+
+.mini-profile-top{
+    outline: none;
+    padding:5px 10px;
+    border-radius:10px;
+}
+
+.mini-profile-top:hover {
+    background-color: rgba(0, 0, 0, 0.2);
 }

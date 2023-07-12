@@ -3,28 +3,37 @@
 @using Microsoft.AspNetCore.Http;
 @using WebApp.Models;
 @using WebApp.Services;
+
+
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
 @inject IWebHostEnvironment Environment
 
 
+<PageTitle>Профиль</PageTitle>
 
-<div class="container-block pd-20">
-    <h3 style="text-align:center;">Профиль</h3>
+<div class="container-block pd-20" style="max-width: 700px; margin: 0 auto;">
+    <h3 style="text-align:center; color: #B381F9; margin-bottom:20px;">Профиль</h3>
 
     <div>
         <div class="block-input" style="display: flex; flex-direction: column; align-content: center; justify-content: center; align-items: center;">
             <div style="max-width:150px;">
-                <div class="container-avatar" style="width:150px; height:150px;">
+                <div class="container-avatar" style="width:150px; height:150px; display: inline-block; position: relative;">
                     <div style="" @onclick="UploadAvatarProfileButtonClick">
                         <img style="max-width: 100%; max-height: 100%;" src="@(urlProfileAvatar)" />
                     </div>
+                    <InputFile multiple accept=".jpg,.png" OnChange="@HandleFileInputAvatarProfile" style="cursor:pointer; opacity: 0; height: 100%; position: absolute; top: 0; width: 100%; left: 0;" />
                 </div>
-                <div style="background-color:#60000000;">
-                    <InputFile multiple OnChange="@HandleFileInputAvatarProfile" />
-                </div>
-                <p class="warning-color" style="margin: 0; @(showErrorMessageInputName ? "visibility: visible;" : "visibility: collapse;")">@(textErrorMessageInputName)</p>
             </div>
+            <p class="warning-color" style="margin: 0; @(showErrorMessageInputAvatar ? "visibility: visible;" : "visibility: collapse;")">@(textErrorMessageInputAvatar)</p>
+        </div>
+
+        <div class="block-input">
+            <label>Тип</label>
+            <div class="container-input @(focusInputName ? "container-input-focus": "")">
+                <input type="text" disabled @onfocus="HandelFocusInputName" @onblur="HandelBlurInputName" @bind="@profileModel.Name" />
+            </div>
+            <p class="warning-color" style="margin: 0; @(showErrorMessageInputName ? "visibility: visible;" : "visibility: collapse;")">@(textErrorMessageInputName)</p>
         </div>
 
         <div class="block-input">
@@ -107,7 +116,7 @@
 
     </div>*@
 
-    <button class="btn btn-primary" style="margin-top: 20px;" @onclick="Logout">Выйти</button>
+    <button class="btn btn-danger" style="margin-top: 20px;" @onclick="Logout">Выйти</button>
 </div>
 
 @code {
@@ -116,6 +125,9 @@
     private ProfileModel profileModel;
 
     private string eyeImageURL = "Images/EyeView128.png";
+
+    private bool showErrorMessageInputAvatar = false;
+    private string textErrorMessageInputAvatar = "";
 
     private bool focusInputName = false;
     private bool showErrorMessageInputName = false;
@@ -160,6 +172,10 @@
     private List<IBrowserFile> loadedFiles = new();
 
 
+    [CascadingParameter]
+    public MainLayout Layout { get; set; }
+
+
     protected override async void OnInitialized()
     {
         _accountService = new AccountService(JSRuntime);
@@ -172,6 +188,8 @@
     {
         if (firstRender)
         {
+            ((MainLayout)Layout).ShowLoadingScreen();
+
             tokenAccess = await _accountService.GetTokenAccessAsync();
 
             Colleges = await Services.ScheduleAPIService.GetCollegesAsync();
@@ -205,6 +223,8 @@
             }
 
             StateHasChanged();
+
+            ((MainLayout)Layout).HideLoadingScreen();
         }
     }
 
@@ -217,8 +237,10 @@
     {
         try
         {
+            showErrorMessageInputAvatar = false;
+
             loadedFiles.Clear();
-            
+
             var maxAllowedFiles = 1;
             var maxFileSize = 10 * 1024 * 1024;
 
@@ -226,22 +248,31 @@
             {
                 try
                 {
-                    await Services.ScheduleAPIService.UploadFile(tokenAccess ,file, maxFileSize: maxFileSize);
-
-                    var profileInfoResponse = await Services.ScheduleAPIService.Account.GetProfileInfoAsync(tokenAccess);
-
-                    if (profileInfoResponse is not null)
+                    if (file.ContentType == "image/jpeg" || file.ContentType == "image/png")
                     {
-                        urlProfileAvatar = $"{Program.UrlAPI}/images/get/{profileInfoResponse.ProfileAvatarName}";
+
+                        await Services.ScheduleAPIService.UploadFile(tokenAccess, file, maxFileSize: maxFileSize);
+
+                        var profileInfoResponse = await Services.ScheduleAPIService.Account.GetProfileInfoAsync(tokenAccess);
+
+                        if (profileInfoResponse is not null)
+                        {
+                            urlProfileAvatar = $"{Program.UrlAPI}/images/get/{profileInfoResponse.ProfileAvatarName}";
+                        }
+
                     }
-
-                    StateHasChanged();
-
+                    else
+                    {
+                        textErrorMessageInputAvatar = "Не верный фомат!";
+                        showErrorMessageInputAvatar = true;
+                    }
                 }
                 catch (Exception ex)
                 {
                     
                 }
+
+                StateHasChanged();
             }
 
 

@@ -1,6 +1,12 @@
 ﻿@page "/"
+@using WebApp.Services;
 
-<PageTitle>Index</PageTitle>
+
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+
+
+<PageTitle>Расписание</PageTitle>
 
 <!--<h1>Hello, world!</h1>
 
@@ -12,5 +18,34 @@ Welcome to your new app.
 <a href=""></a>
 
 @code{
-    //var 
+    private CookieHelperService _cookieHelperService;
+    private AccountService _accountService;
+
+    private string tokenAccess { get; set; }
+
+
+
+    [CascadingParameter]
+    public MainLayout Layout { get; set; }
+
+    protected override async void OnInitialized()
+    {
+        _cookieHelperService = new CookieHelperService(JSRuntime);
+        _accountService = new AccountService(JSRuntime);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            ((MainLayout)Layout).ShowLoadingScreen();
+
+            tokenAccess = await _cookieHelperService.GetTokenAccessAsync();
+
+
+
+            ((MainLayout)Layout).HideLoadingScreen();
+        }
+    }
+
 }

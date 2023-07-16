@@ -39,27 +39,34 @@ namespace WebApi.Controllers.Account
             {
                 return NotFound();
             }
-            var userRoleStudent = await _context.UserRoles.FirstAsync(x => x.Name.ToLower().Trim() == "студент");
-
-            if (userRoleStudent is not null)
+            var userRole = (Types.Enums.UserRole)user.UserRoleId;
+            
+            if (userRole == Types.Enums.UserRole.Student)
             {
-                if (user.UserRoleId == userRoleStudent.Id)
+                if(collegeId is not null && groupId is not null)
                 {
-                    if(collegeId is not null && groupId is not null)
+                    var studentDetail = _context.StudentDetails.FirstOrDefault(x=>x.UserId == user.Id);
+
+                    if (studentDetail is null)
                     {
-                        var studentDetail = _context.StudentDetails.FirstOrDefault(x=>x.UserId == user.Id);
-
-                        if (studentDetail is not null)
+                        studentDetail = new StudentDetail()
                         {
-                            studentDetail.GroupId = (int)groupId;
-
-                            _context.SaveChanges();
-                        }
+                            UserId = user.Id,
+                            GroupId = (int)groupId,
+                        };
+                        _context.StudentDetails.Add(studentDetail);
+                        _context.SaveChanges();
                     }
                     else
                     {
-                        return BadRequest(new {message= "collegeId или groupId не указан!" });
+                        studentDetail.GroupId = (int)groupId;
+
+                        _context.SaveChanges();
                     }
+                }
+                else
+                {
+                    return BadRequest(new {message= "collegeId или groupId не указан!" });
                 }
             }
 

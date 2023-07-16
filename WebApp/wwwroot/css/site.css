@@ -165,7 +165,7 @@ input:focus {
     border: none;
 }
 
-.main-background {
+body {
     background-color: #DFC8FF;
 }
 

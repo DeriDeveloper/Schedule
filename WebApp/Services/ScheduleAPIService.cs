@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Components.Forms;
 using Newtonsoft.Json;
+using NuGet.Protocol.Plugins;
 using System.Diagnostics;
 using System.Net;
+using System.Runtime.CompilerServices;
 using WebApp.Models;
 
 namespace WebApp.Services
@@ -69,6 +71,36 @@ namespace WebApp.Services
             {
                 Debug.WriteLine(ex.ToString());
                 return new List<College>();
+            }
+        }
+        public static async Task<List<UserRole>> GetUserRolesAsync()
+        {
+            try
+            {
+                var client = new HttpClient();
+                var request = new HttpRequestMessage(HttpMethod.Get, $"{urlAPI}/UserRoles/Get");
+                var response = await client.SendAsync(request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+
+
+                    var userRoles = JsonConvert.DeserializeObject<List<UserRole>>(responseContent);
+
+                    if (userRoles is not null)
+                        return userRoles;
+                    else return new List<UserRole>();
+                }
+                else
+                {
+                    return new List<UserRole>();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+                return new List<UserRole>();
             }
         }
         public static async Task<List<ResponseGroup>?> GetGroups(int collegeId, int year)
@@ -164,11 +196,65 @@ namespace WebApp.Services
                 return (status: null, response: null);
             }
         }
-    
-        
+
+
+        public static async Task<List<ScheduleCell>> GetScheduleCells(int groupId, DateTime selectDate)
+        {
+            return null;
+        }
+
+
 
         public class Account
         {
+            public static async Task<ResponseRegistration?> RegistariotionAsync(string login, string password, string name, string email, int userRoleId)
+            {
+                try
+                {
+                    var requestRegistration = new RequestRegistration()
+                    {
+                        Login = login,
+                        Password = password,
+                        Name = name,
+                        Email = email,
+                        UserRoleId = userRoleId
+                    };
+
+
+                    var client = new HttpClient();
+                    var request = new HttpRequestMessage(HttpMethod.Post, $"{urlAPI}/account/registration");
+                    request.Headers.Add("Accept", "text/plain");
+                    var content = new StringContent(System.Text.Json.JsonSerializer.Serialize(requestRegistration), null, "application/json");
+                    request.Content = content;
+                    var response = await client.SendAsync(request);
+
+                    if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                    {
+                        var responseString = await response.Content.ReadAsStringAsync();
+
+                        var responseRegistration = Newtonsoft.Json.JsonConvert.DeserializeObject<ResponseRegistration>(responseString);
+
+                        return responseRegistration;
+                    }
+                    else if(response.StatusCode == HttpStatusCode.Conflict)
+                    {
+                        var responseString = await response.Content.ReadAsStringAsync();
+
+                        var responseRegistration = Newtonsoft.Json.JsonConvert.DeserializeObject<ResponseRegistration>(responseString);
+
+                        return responseRegistration;
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.ToString());
+                    return null;
+                }
+            }
             public static async Task<ProfileInfoResponse?> GetProfileInfoAsync(string token)
             {
                 var client = new HttpClient();
@@ -187,16 +273,25 @@ namespace WebApp.Services
             }
             public static async Task<bool?> SaveProfileInfoAsync(string token, string name, int collegeId, int groupId)
             {
-                var client = new HttpClient();
-                var request = new HttpRequestMessage(HttpMethod.Post, $"{urlAPI}/account/SaveProfileInfo?accessToken={token}&name={name}&collegeId={collegeId}&groupId={groupId}");
-                var response = await client.SendAsync(request);
-                if (response.IsSuccessStatusCode)
+                try
                 {
-                    return true;
+                    var client = new HttpClient();
+                    var request = new HttpRequestMessage(HttpMethod.Post, $"{urlAPI}/account/SaveProfileInfo?accessToken={token}&name={name}&collegeId={collegeId}&groupId={groupId}");
+                    var response = await client.SendAsync(request);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+
                 }
-                else
+                catch (Exception ex)
                 {
-                    return false;
+                    Debug.WriteLine(ex.ToString());
+                    return null;
                 }
             }
         }

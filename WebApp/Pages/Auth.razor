@@ -1,5 +1,6 @@
 ﻿@page "/auth"
 @using System.Diagnostics;
+@using System.Text;
 @using WebApp.Models;
 @using WebApp.Services;
 @inject IHttpContextAccessor HttpContextAccessor
@@ -10,47 +11,141 @@
 <PageTitle>Авторизация</PageTitle>
 
 
-<div style="width:300px; padding:10px; margin: 0 auto;">
-    <div class="container-block  pd-20">
-        <h3 class="text-center">Авторизация</h3>
-        <div style="margin-top:20px;">
-            <div class="block-input">
-                <label>Логин</label>
-                <div class="container-input @(focusInputLogin ? "container-input-focus": "")" >
-                    <div class="container-input-icon">
-                        <img src="Images/User128.png" style="max-height:100%;max-width:100%;" />
+@if (isSignIn)
+{
+    <div style="width:300px; padding:10px; margin: 0 auto; margin-top: 100px;">
+        <div class="container-block  pd-20">
+            <h3 class="text-center">Авторизация</h3>
+            <div style="margin-top:20px;">
+                <div class="block-input">
+                    <label>Логин</label>
+                    <div class="container-input @(focusInputLoginSignIn ? "container-input-focus": "")" >
+                        <div class="container-input-icon">
+                            <img src="Images/User128.png" style="max-height:100%;max-width:100%;" />
+                        </div>
+                        <input type="text" @onfocus="HandelFocusInputLogin" @onblur="HandelBlurInputLogin" @bind="@loginModel.Login" />
                     </div>
-                    <input type="text" @onfocus="HandelFocusInputLogin" @onblur="HandelBlurInputLogin" @bind="@loginModel.Login" />
+                    @if (showErrorMessageInputLoginSignIn)
+                    {
+                        <p class="warning-color" style="margin: 0; ">@(textErrorMessageInputLogin)</p>
+                    }
                 </div>
-                @if (showErrorMessageInputLogin)
-                {
-                    <p class="warning-color" style="margin: 0; ">@(textErrorMessageInputLogin)</p>
-                }
-            </div>
-            <div class="block-input">
-                <label>Пароль</label>
-                <div class="container-input @(focusInputPassword ? "container-input-focus": "")">
-                    <div class="container-input-icon">
-                        <img src="Images/padlock128.png" style="max-height:100%;max-width:100%;"/>
+                <div class="block-input">
+                    <label>Пароль</label>
+                    <div class="container-input @(focusInputPasswordSignIn ? "container-input-focus": "")">
+                        <div class="container-input-icon">
+                            <img src="Images/padlock128.png" style="max-height:100%;max-width:100%;"/>
+                        </div>
+                        <input type="@GetPasswordInputTypeSignIn()" autocomplete="new-password" @onfocus="HandelFocusInputPassword" @onblur="HandelBlurInputPassword" @bind="@loginModel.Password" />
+                        <div>
+                            <img src="@eyeImageURLSignIn" @onclick="TogglePasswordVisibilitySignIn" style="max-height:100%;max-width:100%; cursor:pointer;" />
+                        </div>
                     </div>
-                    <input type="@GetPasswordInputType()" @onfocus="HandelFocusInputPassword" @onblur="HandelBlurInputPassword" @bind="@loginModel.Password" />
-                    <div>
-                        <img src="@eyeImageURL" @onclick="TogglePasswordVisibility" style="max-height:100%;max-width:100%; cursor:pointer;" />
-                    </div>
+                    @if (showErrorMessageInputPasswordSignIn)
+                    {
+                        <p class="warning-color" style="margin: 0; ">@(textErrorMessageInputPassword)</p>
+                    }
                 </div>
-                @if (showErrorMessageInputPassword)
+                <button class="btn btn-primary" disabled="@(!isButtonEnabledSignIn)" style="margin-top: 20px;" @onclick="SignIn">Войти</button>
+                @if (showGlobalMessageSignIn)
                 {
-                    <p class="warning-color" style="margin: 0; ">@(textErrorMessageInputPassword)</p>
+                    <p class="warning-color" style="margin: 0; margin-top: 15px; ">@(textGlobalMessage)</p>
                 }
+
+                <button class="btn btn-secondary" style="margin-top: 20px;" @onclick="ShowSignUp">Зарегистрироваться</button>
             </div>
-            <button class="btn btn-primary" disabled="@(!isButtonSignInEnabled)" style="margin-top: 20px;" @onclick="SignIn">Войти</button>
-            @if (showGlobalMessage)
-            {
-                <p class="warning-color" style="margin: 0; margin-top: 15px; ">@(textGlobalMessage)</p>
-            }
         </div>
     </div>
-</div>
+}
+else
+{
+    <div style="width:300px; padding:10px; margin: 0 auto; margin-top: 100px;">
+        <div class="container-block  pd-20">
+            <h3 class="text-center">Регистрация</h3>
+            <div style="margin-top:20px;">
+                <div class="block-input">
+                    <label>Логин</label>
+                    <div class="container-input @(focusInputLoginSignUp ? "container-input-focus": "")">
+                        <div class="container-input-icon">
+                            <img src="Images/User128.png" style="max-height:100%;max-width:100%;" />
+                        </div>
+                        <input type="text" @onfocus="HandelFocusInputLoginSignUp" @onblur="HandelBlurInputLoginSignUp" @bind="@registrationModel.Login" />
+                    </div>
+                    @if (showErrorMessageInputLoginSignUp)
+                    {
+                        <p class="warning-color" style="margin: 0; ">
+                            @(textErrorMessageInputLoginSignUp)
+                        </p>
+                    }
+                </div>
+                <div class="block-input">
+                    <label>Пароль</label>
+                    <div class="container-input @(focusInputPasswordSignUp ? "container-input-focus": "")">
+                        <div class="container-input-icon">
+                            <img src="Images/padlock128.png" style="max-height:100%;max-width:100%;" />
+                        </div>
+                        <input type="@GetPasswordInputTypeSignUp()" autocomplete="new-password" @onfocus="HandelFocusInputPasswordSignUp" @onblur="HandelBlurInputPasswordSignUp" @bind="@registrationModel.Password" />
+                        <!--<div>
+                            <img src="@eyeImageURLSignUp" @onclick="TogglePasswordVisibilitySignUp" style="max-height:100%;max-width:100%; cursor:pointer;" />
+                        </div>-->
+                    </div>
+                    @if (showErrorMessageInputPasswordSignUp)
+                    {
+                        <p class="warning-color" style="margin: 0; ">@(textErrorMessageInputPasswordSignUp)</p>
+                    }
+                </div>
+                <div class="block-input">
+                    <label>Повторите пароль</label>
+                    <div class="container-input @(focusInputRepeatPasswordSignUp ? "container-input-focus": "")">
+                        <div class="container-input-icon">
+                            <img src="Images/padlock128.png" style="max-height:100%;max-width:100%;" />
+                        </div>
+                        <input type="@GetRepeatPasswordInputTypeSignUp()" autocomplete="new-password" @onfocus="HandelFocusInputRepeatPasswordSignUp" @onblur="HandelBlurInputRepeatPasswordSignUp" @bind="@registrationModel.RepeatPassword" />
+                        <!--<div>
+                            <img src="@eyeImageURLRepeatPasswordSignUp" @onclick="ToggleRepeatPasswordVisibilitySignUp" style="max-height:100%;max-width:100%; cursor:pointer;" />
+                        </div>-->
+                    </div>
+                    @if (showErrorMessageInputPasswordSignUp)
+                    {
+                        <p class="warning-color" style="margin: 0; ">@(textErrorMessageInputRepeatPasswordSignUp)</p>
+                    }
+                </div>
+                <div class="block-input">
+                    <label>Тип пользователя</label>
+                    <div class="container-input @(focusInputUserRoleSignUp ? "container-input-focus": "")">
+                        <select @onchange="HandleUserRoleSelectChangeSignUp" @onfocus="HandelFocusInputUserRoleSignUp" @onblur="HandelBlurInputUserRoleSignUp">
+                            <option selected value=""></option>
+                            @foreach (var userRole in UserRoles)
+                            {
+                                @if (userRole.Id == selectedUserRoleId)
+                                {
+                                    <option value="@userRole.Id" selected>@userRole.Name</option>
+                                }
+                                else
+                                {
+                                    <option value="@userRole.Id">@userRole.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    @if (showErrorMessageInputUserRoleSignUp)
+                    {
+                        <p class="warning-color" style="margin: 0;">@(textErrorMessageInputUserRoleSignUp)</p>
+                    }
+                </div>
+                <button class="btn btn-primary" disabled="@(!isButtonEnabledSignUp)" style="margin-top: 20px;" @onclick="SignUp">Зарегистрироваться</button>
+                @if (showGlobalMessageSignUp)
+                {
+                    <p class="warning-color" style="margin: 0; margin-top: 15px; ">
+                        @(textGlobalMessageSignUp)
+                    </p>
+                }
+
+                <button class="btn btn-secondary" style="margin-top: 20px;" @onclick="ShowSignIn">Назад</button>
+            </div>
+        </div>
+    </div>
+}
 
 
 @code {
@@ -60,23 +155,75 @@
 
     private string urlRedirect = "";
 
-    private bool showPassword = false;
-    private bool focusInputLogin = false;
-    private bool focusInputPassword = false;
-    private string eyeImageURL = "Images/EyeView128.png";
+    private const string eyeViewImageURL = "Images/EyeView128.png";
+    private const string eyeHideImageURL = "Images/EyeHide128.png";
+
+
+    private bool showPasswordSignIn { get; set; } 
+    private bool focusInputLoginSignIn { get; set; }
+    private bool focusInputPasswordSignIn { get; set; }
+    private bool showErrorMessageInputLoginSignIn { get; set; }
+    private bool validInputLoginSignIn { get; set; }
+    private bool showErrorMessageInputPasswordSignIn { get; set; }
+    private bool validInputPasswordSignIn { get; set; }
+    private bool showGlobalMessageSignIn { get; set; }
+    private bool isButtonEnabledSignIn { get; set; } = true;
+
+
+    private string eyeImageURLSignIn { get; set; } = eyeViewImageURL;
     private string textErrorMessageInputLogin = "";
-    private bool showErrorMessageInputLogin = false;
-    private bool validInputLogin = false;
-    private string textErrorMessageInputPassword = "";
-    private bool showErrorMessageInputPassword = false;
-    private bool validInputPassword = false;
+    private string textErrorMessageInputPassword { get; set; } = "";
+    private string textGlobalMessage { get; set; } = "";
 
-    private string textGlobalMessage = "";
-    private bool showGlobalMessage = false;
 
-    private bool isButtonSignInEnabled = true;
+
+
+    private bool validInputLoginSignUp { get; set; }
+    private bool validInputPasswordSignUp { get; set; }
+    private bool validInputRepeatPasswordSignUp { get; set; }
+
+    private bool focusInputLoginSignUp { get; set; }
+    private bool focusInputPasswordSignUp { get; set; }
+    private bool focusInputRepeatPasswordSignUp { get; set; }
+    private bool focusInputUserRoleSignUp { get; set; }
+
+    private bool showPasswordSignUp { get; set; }
+    private bool showRepeatPasswordSignUp { get; set; }
+    private bool showErrorMessageInputLoginSignUp { get; set; }
+    private bool showErrorMessageInputPasswordSignUp { get; set; }
+    private bool showErrorMessageInputRepeatPasswordSignUp { get; set; }
+    private bool showErrorMessageInputUserRoleSignUp { get; set; }
+
+    private string eyeImageURLSignUp { get; set; } = eyeViewImageURL;
+    private string eyeImageURLRepeatPasswordSignUp { get; set; } = eyeViewImageURL;
+    private string textErrorMessageInputLoginSignUp { get; set; } = "";
+    private string textErrorMessageInputPasswordSignUp { get; set; } = "";
+    private string textErrorMessageInputRepeatPasswordSignUp { get; set; } = "";
+    private string textErrorMessageInputUserRoleSignUp { get; set; } = "";
+
+
+
+    private string textGlobalMessageSignUp = "";
+    private bool showGlobalMessageSignUp = false;
+
+    private bool isButtonEnabledSignUp = true;
+
+    private List<UserRole> UserRoles { get; set; } = new List<UserRole>();
+
+    private int selectedUserRoleId { get; set; }
+
+
+
+
+    private bool isSignIn { get; set; } = true;
+
+
+    private bool isInitFormSignUp { get; set; }
+
+
 
     private LoginModel loginModel = new LoginModel();
+    private RegistrationModel registrationModel = new RegistrationModel();
 
 
 
@@ -95,6 +242,7 @@
             {
                 await IsUserAuthenticatedAsync(tokenAccess);
             }
+
 
             ((MainLayout)Layout).HideLoadingScreen();
         }
@@ -116,6 +264,60 @@
 
 
     }
+
+    private async void ShowSignUp()
+    {
+        isSignIn = false;
+
+        if (!isInitFormSignUp)
+        {
+            await InitFormSignUp();
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task InitFormSignUp()
+    {
+
+        var userRolesTemp = await Services.ScheduleAPIService.GetUserRolesAsync();
+
+        userRolesTemp = userRolesTemp.Where(x => x.Id == 2 || x.Id == 4).ToList();
+
+        UserRoles = userRolesTemp;
+
+        isInitFormSignUp = true;
+    }
+
+
+    private async void ShowSignIn()
+    {
+        isSignIn = true;
+
+        StateHasChanged();
+    }
+
+    private async void HandleUserRoleSelectChangeSignUp(ChangeEventArgs e)
+    {
+        showErrorMessageInputUserRoleSignUp = false;
+
+        selectedUserRoleId = 0;
+
+
+        if (string.IsNullOrEmpty(e.Value as string))
+        {
+            textErrorMessageInputUserRoleSignUp = "Тип пользователя не выбран!";
+            showErrorMessageInputUserRoleSignUp = true;
+            return;
+        }
+        selectedUserRoleId = int.Parse((string)e.Value);
+
+        registrationModel.UserRoleId = selectedUserRoleId;
+
+        StateHasChanged();
+    }
+
+
 
     private async Task IsUserAuthenticatedAsync(string token)
     {
@@ -139,13 +341,83 @@
         }
     }
 
-    private async Task SignIn(MouseEventArgs e)
+    private async Task SignUp()
     {
-        isButtonSignInEnabled = false;
+        isButtonEnabledSignUp = false;
 
         try
         {
-            if (!validInputLogin || !validInputPassword)
+            if (!validInputLoginSignUp || !validInputPasswordSignUp || !validInputRepeatPasswordSignUp)
+            {
+                ShowGlobalMessageSignUp("Исправьте ошибки!");
+            }
+            else
+            {
+                if (registrationModel.Password != registrationModel.RepeatPassword)
+                {
+                    ShowGlobalMessageSignUp("Пароли не совпадают!");
+                    StateHasChanged();
+                    return;
+                }
+
+
+                // удалить
+                registrationModel.Name = "Temp";
+                registrationModel.Email = "Temp";
+
+                var response = await ScheduleAPIService.Account.RegistariotionAsync(login: registrationModel.Login, password: registrationModel.Password, name: registrationModel.Name, email: registrationModel.Email, userRoleId: registrationModel.UserRoleId);
+
+                if (response is null)
+                {
+                    ShowGlobalMessageSignUp("Произошла неизвестная ошибка, попробуйте еще раз!");
+                }
+                else
+                {
+                    if (response.IsSuccess)
+                    {
+                        loginModel.Login = registrationModel.Login;
+                        loginModel.Password = registrationModel.Password;
+                        isSignIn = true;
+                    }
+                    else
+                    {
+                        if (response.ErrorMessages is not null)
+                        {
+                            StringBuilder sb = new StringBuilder();
+
+                            foreach (var errorMessage in response.ErrorMessages)
+                            {
+                                sb.AppendLine(errorMessage.Message);
+                            }
+
+                            ShowGlobalMessageSignUp(sb.ToString());
+                        }
+                        else
+                        {
+                            ShowGlobalMessageSignUp("Произошла неизвестная ошибка, попробуйте еще раз!");
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex.ToString());
+        }
+
+        isButtonEnabledSignUp = true;
+
+        StateHasChanged();
+
+    }
+
+    private async Task SignIn(MouseEventArgs e)
+    {
+        isButtonEnabledSignIn = false;
+
+        try
+        {
+            if (!validInputLoginSignIn || !validInputPasswordSignIn)
             {
                 ShowGlobalMessage("Исправьте ошибки!");
             }
@@ -203,7 +475,7 @@
             Debug.WriteLine(ex.ToString());
         }
 
-        isButtonSignInEnabled = true;
+        isButtonEnabledSignIn = true;
     }
 
     private void UserNotFound()
@@ -216,46 +488,126 @@
     private void ShowGlobalMessage(string message)
     {
         textGlobalMessage = message;
-        showGlobalMessage = true;
+        showGlobalMessageSignIn = true;
+    }
+    private void ShowGlobalMessageSignUp(string message)
+    {
+        textGlobalMessageSignUp = message;
+        showGlobalMessageSignUp = true;
     }
 
 
 
     private void HandelFocusInputLogin()
     {
-        focusInputLogin = true;
+        focusInputLoginSignIn = true;
     }
 
     private void HandelBlurInputLogin()
     {
-        focusInputLogin = false;
+        focusInputLoginSignIn = false;
 
         CheckValidDataLogin();
     }
+    private void HandelFocusInputUserRoleSignUp()
+    {
+        focusInputLoginSignIn = true;
+    }
+
+    private void HandelBlurInputUserRoleSignUp()
+    {
+        focusInputLoginSignIn = false;
+
+        CheckValidDataLogin();
+    }
+
     private void HandelFocusInputPassword()
     {
-        focusInputPassword = true;
+        focusInputPasswordSignIn = true;
     }
 
     private void HandelBlurInputPassword()
     {
-        focusInputPassword = false;
+        focusInputPasswordSignIn = false;
 
         CheckValidDataPassword();
 
     }
 
-    private void TogglePasswordVisibility()
+    private void HandelFocusInputLoginSignUp()
     {
-        showPassword = !showPassword;
+        focusInputLoginSignUp= true;
+    }
 
-        if (showPassword)
+    private void HandelBlurInputLoginSignUp()
+    {
+        focusInputLoginSignUp = false;
+
+        CheckValidDataLoginSignUp();
+    }
+    private void HandelFocusInputPasswordSignUp()
+    {
+        focusInputPasswordSignUp = true;
+    }
+
+    private void HandelBlurInputPasswordSignUp()
+    {
+        focusInputPasswordSignUp = false;
+
+        CheckValidDataPasswordSignUp();
+    }
+
+    private void HandelFocusInputRepeatPasswordSignUp()
+    {
+        focusInputRepeatPasswordSignUp = true;
+    }
+
+    private void HandelBlurInputRepeatPasswordSignUp()
+    {
+        focusInputRepeatPasswordSignUp = false;
+
+        CheckValidDataRepeatPasswordSignUp();
+    }
+
+    private void TogglePasswordVisibilitySignIn()
+    {
+        showPasswordSignIn = !showPasswordSignIn;
+
+        if (showPasswordSignIn)
         {
-            eyeImageURL = "Images/EyeHide128.png";
+            eyeImageURLSignIn = eyeHideImageURL;
         }
         else
         {
-            eyeImageURL = "Images/EyeView128.png";
+            eyeImageURLSignIn = eyeViewImageURL;
+        }
+    }
+
+    private void TogglePasswordVisibilitySignUp()
+    {
+        showPasswordSignUp = !showPasswordSignUp;
+
+        if (showPasswordSignUp)
+        {
+            eyeImageURLSignUp = eyeHideImageURL;
+        }
+        else
+        {
+            eyeImageURLSignUp = eyeViewImageURL;
+        }
+    }
+
+    private void ToggleRepeatPasswordVisibilitySignUp()
+    {
+        showRepeatPasswordSignUp = !showRepeatPasswordSignUp;
+
+        if (showRepeatPasswordSignUp)
+        {
+            eyeImageURLRepeatPasswordSignUp = eyeHideImageURL;
+        }
+        else
+        {
+            eyeImageURLRepeatPasswordSignUp = eyeViewImageURL;
         }
     }
 
@@ -264,36 +616,112 @@
     {
         if (string.IsNullOrEmpty(loginModel.Login))
         {
-            showErrorMessageInputLogin = true;
+            showErrorMessageInputLoginSignIn = true;
             textErrorMessageInputLogin = "Не введен логин!";
-            validInputLogin = false;
+            validInputLoginSignIn = false;
         }
         else
         {
-            showErrorMessageInputLogin = false;
+            showErrorMessageInputLoginSignIn = false;
             textErrorMessageInputLogin = "";
-            validInputLogin = true;
+            validInputLoginSignIn = true;
         }        
     }
     private void CheckValidDataPassword()
     {
         if (string.IsNullOrEmpty(loginModel.Password))
         {
-            showErrorMessageInputPassword = true;
+            showErrorMessageInputPasswordSignIn = true;
             textErrorMessageInputPassword = "Не введен пароль!";
         }
         else
         {
-            showErrorMessageInputPassword = false;
+            showErrorMessageInputPasswordSignIn = false;
             textErrorMessageInputPassword = "";
-            validInputPassword = true;
+            validInputPasswordSignIn = true;
         }
     }
 
 
 
-    private string GetPasswordInputType()
+
+
+    private void CheckValidDataLoginSignUp()
     {
-        return showPassword ? "text" : "password";
+        if (string.IsNullOrEmpty(registrationModel.Login))
+        {
+            showErrorMessageInputLoginSignUp = true;
+            textErrorMessageInputLoginSignUp = "Не введен логин!";
+            validInputLoginSignUp = false;
+        }
+        else
+        {
+            showErrorMessageInputLoginSignUp = false;
+            textErrorMessageInputLoginSignUp = "";
+            validInputLoginSignUp = true;
+        }
+    }
+
+    private void CheckValidDataPasswordSignUp()
+    {
+        if (string.IsNullOrEmpty(registrationModel.Password))
+        {
+            showErrorMessageInputPasswordSignUp = true;
+            textErrorMessageInputPasswordSignUp = "Не введен пароль!";
+            validInputPasswordSignUp = false;
+        }
+        else if (registrationModel.Password != registrationModel.RepeatPassword)
+        {
+            showErrorMessageInputPasswordSignUp = true;
+            textErrorMessageInputPasswordSignUp = "Пароли не совпадают!";
+            validInputPasswordSignUp = false;
+        }
+        else
+        {
+            showErrorMessageInputPasswordSignUp = false;
+            textErrorMessageInputPasswordSignUp = "";
+            validInputPasswordSignUp = true;
+        }
+    }
+
+    private void CheckValidDataRepeatPasswordSignUp()
+    {
+        if (string.IsNullOrEmpty(registrationModel.RepeatPassword))
+        {
+            showErrorMessageInputRepeatPasswordSignUp = true;
+            textErrorMessageInputRepeatPasswordSignUp = "Не введен пароль!";
+            validInputRepeatPasswordSignUp = false;
+        }
+        else if (registrationModel.Password != registrationModel.RepeatPassword)
+        {
+            showErrorMessageInputRepeatPasswordSignUp = true;
+            textErrorMessageInputRepeatPasswordSignUp = "Пароли не совпадают!";
+            validInputRepeatPasswordSignUp = false;
+        }
+        else
+        {
+            showErrorMessageInputRepeatPasswordSignUp = false;
+            textErrorMessageInputRepeatPasswordSignUp = "";
+            validInputRepeatPasswordSignUp = true;
+        }
+    }
+
+
+
+    private string GetPasswordInputTypeSignIn()
+    {
+        return showPasswordSignIn ? "text" : "password";
+    }
+
+
+    private string GetPasswordInputTypeSignUp()
+    {
+        return showPasswordSignUp ? "text" : "password";
+    }
+
+
+    private string GetRepeatPasswordInputTypeSignUp()
+    {
+        return showRepeatPasswordSignUp ? "text" : "password";
     }
 }

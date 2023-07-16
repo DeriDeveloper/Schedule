@@ -19,8 +19,8 @@
         <div class="block-input" style="display: flex; flex-direction: column; align-content: center; justify-content: center; align-items: center;">
             <div style="max-width:150px;">
                 <div class="container-avatar" style="width:150px; height:150px; display: inline-block; position: relative;">
-                    <div style="" @onclick="UploadAvatarProfileButtonClick">
-                        <img style="max-width: 100%; max-height: 100%;" src="@(urlProfileAvatar)" />
+                    <div style="height: 100%;" @onclick="UploadAvatarProfileButtonClick">
+                        <img style="max-width: 100%; max-height: 100%; height: 100%;" src="@(urlProfileAvatar)" />
                     </div>
                     <InputFile multiple accept=".jpg,.png" OnChange="@HandleFileInputAvatarProfile" style="cursor:pointer; opacity: 0; height: 100%; position: absolute; top: 0; width: 100%; left: 0;" />
                 </div>
@@ -29,9 +29,9 @@
         </div>
 
         <div class="block-input">
-            <label>Тип</label>
-            <div class="container-input @(focusInputName ? "container-input-focus": "")">
-                <input type="text" disabled @onfocus="HandelFocusInputName" @onblur="HandelBlurInputName" @bind="@profileModel.Name" />
+            <label>Тип пользователя</label>
+            <div class="container-input">
+                <input type="text" disabled @bind="@profileModel.UserRole.Name" />
             </div>
             <p class="warning-color" style="margin: 0; @(showErrorMessageInputName ? "visibility: visible;" : "visibility: collapse;")">@(textErrorMessageInputName)</p>
         </div>
@@ -44,52 +44,61 @@
             <p class="warning-color" style="margin: 0; @(showErrorMessageInputName ? "visibility: visible;" : "visibility: collapse;")">@(textErrorMessageInputName)</p>
         </div>
 
-        <div class="block-input">
-            <label>Колледж</label>
-            <div class="container-input @(focusInputCollege ? "container-input-focus": "")">
-                <select @onchange="HandleCollegeSelectChange" @onfocus="HandelFocusInputCollege" @onblur="HandelBlurInputCollege">
-                    <option selected value=""></option>
-                    @foreach (var college in Colleges)
-                    {
-                        @if (college.Id == selectedCollegeId)
+        
+        @if (profileModel.UserRole.Id == 2 || profileModel.UserRole.Id == 4)
+        {
+            <div class="block-input">
+                <label>Колледж</label>
+                <div class="container-input @(focusInputCollege ? "container-input-focus": "")">
+                    <select @onchange="HandleCollegeSelectChange" @onfocus="HandelFocusInputCollege" @onblur="HandelBlurInputCollege">
+                        <option selected value=""></option>
+                        @foreach (var college in Colleges)
                         {
-                            <option value="@college.Id" selected>@college.Name</option>
+                            @if (college.Id == selectedCollegeId)
+                            {
+                                <option value="@college.Id" selected>@college.Name</option>
+                            }
+                            else
+                            {
+                                <option value="@college.Id">@college.Name</option>
+                            }
                         }
-                        else
-                        {
-                            <option value="@college.Id">@college.Name</option>
-                        }
-                    }
-               </select>
+                    </select>
+                </div>
+                @if (showErrorMessageInputCollege)
+                {
+                    <p class="warning-color" style="margin: 0; ">@(
+                textErrorMessageInputCollege
+                )</p>
+                }
             </div>
-            @if (showErrorMessageInputCollege)
-            {
-                <p class="warning-color" style="margin: 0; ">@(textErrorMessageInputCollege)</p>
-            }
-        </div>
 
-        <div class="block-input">
-            <label>Группа</label>
-            <div class="container-input @(focusInputGroup ? "container-input-focus": "")">
-                <select @onchange="HandleGroupSelectChange" @onfocus="HandelFocusInputGroup" @onblur="HandelBlurInputGroup">
-                    <option selected value=""></option>
-                    @foreach (var group in Groups)
-                    {
-                        @if (group.Id == selectedGroupId)
+            <div class="block-input">
+                <label>Группа</label>
+                <div class="container-input @(focusInputGroup ? "container-input-focus": "")">
+                    <select @onchange="HandleGroupSelectChange" @onfocus="HandelFocusInputGroup" @onblur="HandelBlurInputGroup">
+                        <option selected value=""></option>
+                        @foreach (var group in Groups)
                         {
-                            <option value="@group.Id" selected>@group.Name</option>
+                            @if (group.Id == selectedGroupId)
+                            {
+                                <option value="@group.Id" selected>@group.Name</option>
+                            }
+                            else
+                            {
+                                <option value="@group.Id">@group.Name</option>
+                            }
                         }
-                        else
-                        {
-                            <option value="@group.Id">@group.Name</option>
-                        }
-                    }
-                </select>
+                    </select>
+                </div>
+                @if (showErrorMessageInputGroup)
+                {
+                    <p class="warning-color" style="margin: 0;">@(
+                textErrorMessageInputGroup
+                )</p>
+                }
             </div>
-            @if (showErrorMessageInputGroup){
-                <p class="warning-color" style="margin: 0;">@(textErrorMessageInputGroup)</p>
-            }
-        </div>
+        }
 
 
 
@@ -180,7 +189,10 @@
     {
         _accountService = new AccountService(JSRuntime);
 
-        profileModel = new ProfileModel();
+        profileModel = new ProfileModel()
+        {
+             UserRole = new UserRole()
+        };
     }
 
 
@@ -201,6 +213,21 @@
             if (profileInfoResponse is not null)
             {
                 profileModel.Name = profileInfoResponse.Name;
+
+                if (profileInfoResponse.UserRole is not null)
+                {
+                    profileModel.UserRole = profileInfoResponse.UserRole;
+
+                    if (profileModel.UserRole.Id == 2 || profileModel.UserRole.Id == 4)
+                    {
+                        isProfileNameEnabled = true;
+                    }
+                    else
+                    {
+                        isProfileNameEnabled = false;
+                    }
+                }
+
                 urlProfileAvatar = $"{Program.UrlAPI}/images/get/{profileInfoResponse.ProfileAvatarName}";
 
                 if(profileInfoResponse.StudentDetail is not null)
@@ -472,17 +499,17 @@
     }
     private void CheckValidDataOldPassword()
     {
-        if (string.IsNullOrEmpty(profileModel.OldPassword))
-        {
-            showErrorMessageInputOldPassword = true;
-            textErrorMessageInputOldPassword = "Не введен пароль!";
-        }
-        else
-        {
-            showErrorMessageInputOldPassword = false;
-            textErrorMessageInputOldPassword = "";
-            validInputOldPassword = true;
-        }
+        //if (string.IsNullOrEmpty(profileModel.OldPassword))
+        //{
+        //    showErrorMessageInputOldPassword = true;
+        //    textErrorMessageInputOldPassword = "Не введен пароль!";
+        //}
+        //else
+        //{
+        //    showErrorMessageInputOldPassword = false;
+        //    textErrorMessageInputOldPassword = "";
+        //    validInputOldPassword = true;
+        //}
     }
 
 

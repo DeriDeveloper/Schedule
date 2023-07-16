@@ -42,7 +42,25 @@ Welcome to your new app.
 
             tokenAccess = await _cookieHelperService.GetTokenAccessAsync();
 
+            if (!string.IsNullOrEmpty(tokenAccess))
+            {
+                var profileInfoResponse = await Services.ScheduleAPIService.Account.GetProfileInfoAsync(tokenAccess);
 
+                if (profileInfoResponse?.UserRole is not null)
+                {
+                    var userRole = (Types.Enums.UserRole)profileInfoResponse.UserRole.Id;
+
+                    if (userRole == Types.Enums.UserRole.Student)
+                    {
+                        if (profileInfoResponse.StudentDetail is not null)
+                        {
+                            var selectGroupId = profileInfoResponse.StudentDetail.GroupId;
+
+                            NavigationManager.NavigateTo($"/schedule?groupId={selectGroupId}&selectDate={DateTime.Now.ToString("dd.MM.yyyy")}");
+                        }
+                    }
+                }
+            }
 
             ((MainLayout)Layout).HideLoadingScreen();
         }

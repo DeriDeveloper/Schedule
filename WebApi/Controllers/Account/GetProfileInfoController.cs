@@ -36,7 +36,7 @@ namespace WebApi.Controllers.Account
 
             var userId = userAccessToken.UserId;
 
-            var user = await _context.Users.FindAsync(userId);
+            var user = await _context.Users.Where(x=>x.Id == userId).Include(x=>x.UserRole).FirstOrDefaultAsync();
 
             if (user is null)
             {
@@ -79,6 +79,7 @@ namespace WebApi.Controllers.Account
             var profileInfoResponse = new ProfileInfoResponse()
             {
                 Name = user.Name,
+                UserRole = user.UserRole
             };
 
             user.AvatarProfileFileMetadatum = await _context.FileMetadata.FirstAsync(x => x.Id == user.AvatarProfileFileMetadatumId);

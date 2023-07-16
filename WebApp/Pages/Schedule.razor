@@ -1,0 +1,49 @@
+﻿@page "/schedule"
+
+@inject NavigationManager NavigationManager
+
+
+<PageTitle>@pageTitle</PageTitle>
+
+
+
+
+@code {
+    private string pageTitle { get; set; } = "Расписание";
+    private int groupId;
+    private DateTime selectDate;
+
+
+    [CascadingParameter]
+    public MainLayout Layout { get; set; }
+
+
+    protected override void OnInitialized()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+
+        int.TryParse(query["groupId"], out groupId);
+        DateTime.TryParse(query["selectDate"], out selectDate);
+    }
+
+    protected override async void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            ((MainLayout)Layout).ShowLoadingScreen();
+
+            await InitSchedule();
+
+            StateHasChanged();
+
+            ((MainLayout)Layout).HideLoadingScreen();
+        }
+    }
+
+
+    private async Task InitSchedule()
+    {
+        var schedules = await Services.ScheduleAPIService.GetScheduleCells(groupId: groupId, selectDate: selectDate);
+    }
+}

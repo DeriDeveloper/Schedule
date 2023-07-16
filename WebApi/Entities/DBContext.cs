@@ -15,6 +15,8 @@ public partial class DBContext : DbContext
     {
     }
 
+    public virtual DbSet<Audience> Audiences { get; set; }
+
     public virtual DbSet<College> Colleges { get; set; }
 
     public virtual DbSet<File> Files { get; set; }
@@ -22,6 +24,16 @@ public partial class DBContext : DbContext
     public virtual DbSet<FileMetadatum> FileMetadata { get; set; }
 
     public virtual DbSet<Group> Groups { get; set; }
+
+    public virtual DbSet<ScheduleCell> ScheduleCells { get; set; }
+
+    public virtual DbSet<ScheduleCellAudience> ScheduleCellAudiences { get; set; }
+
+    public virtual DbSet<ScheduleCellGroup> ScheduleCellGroups { get; set; }
+
+    public virtual DbSet<ScheduleCellTeacher> ScheduleCellTeachers { get; set; }
+
+    public virtual DbSet<ScheduleTypeWeek> ScheduleTypeWeeks { get; set; }
 
     public virtual DbSet<StudentDetail> StudentDetails { get; set; }
 
@@ -50,6 +62,72 @@ public partial class DBContext : DbContext
                 .HasForeignKey(d => d.CollegeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Groups_Colleges");
+        });
+
+        modelBuilder.Entity<ScheduleCell>(entity =>
+        {
+            entity.Property(e => e.Date).HasColumnType("date");
+
+            entity.HasOne(d => d.TypeWeek).WithMany(p => p.ScheduleCells)
+                .HasForeignKey(d => d.TypeWeekId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ScheduleCells_ScheduleTypeWeek");
+        });
+
+        modelBuilder.Entity<ScheduleCellAudience>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToTable("ScheduleCellAudience");
+
+            entity.HasOne(d => d.Audience).WithMany()
+                .HasForeignKey(d => d.AudienceId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ScheduleCellAudience_Audiences");
+
+            entity.HasOne(d => d.ScheduleCell).WithMany()
+                .HasForeignKey(d => d.ScheduleCellId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ScheduleCellAudience_ScheduleCells");
+        });
+
+        modelBuilder.Entity<ScheduleCellGroup>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToTable("ScheduleCellGroup");
+
+            entity.HasOne(d => d.Group).WithMany()
+                .HasForeignKey(d => d.GroupId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ScheduleCellGroup_Groups");
+
+            entity.HasOne(d => d.ScheduleCell).WithMany()
+                .HasForeignKey(d => d.ScheduleCellId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ScheduleCellGroup_ScheduleCells");
+        });
+
+        modelBuilder.Entity<ScheduleCellTeacher>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToTable("ScheduleCellTeacher");
+
+            entity.HasOne(d => d.ScheduleCell).WithMany()
+                .HasForeignKey(d => d.ScheduleCellId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ScheduleCellTeacher_ScheduleCells");
+
+            entity.HasOne(d => d.Teacher).WithMany()
+                .HasForeignKey(d => d.TeacherId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ScheduleCellTeacher_Users");
+        });
+
+        modelBuilder.Entity<ScheduleTypeWeek>(entity =>
+        {
+            entity.ToTable("ScheduleTypeWeek");
         });
 
         modelBuilder.Entity<StudentDetail>(entity =>

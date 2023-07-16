@@ -1,8 +1,8 @@
 ﻿namespace WebApp.Models
 {
-    public class ProfileModel
+    public class Audience
     {
+        public int Id { get; set; }
         public string Name { get; set; }
-        public UserRole? UserRole { get; set; }
     }
 }

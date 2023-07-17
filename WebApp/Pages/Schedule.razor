@@ -1,17 +1,64 @@
 ﻿@page "/schedule"
+@using System.Diagnostics;
+@using WebApp.Models;
 
 @inject NavigationManager NavigationManager
 
 
 <PageTitle>@pageTitle</PageTitle>
 
+<div style="max-width:1200px; margin:0 auto;">
+    <div>
+        <p style="text-align: center;">@(Services.DayOfWeekService.GetMonthRus(selectDate.Month))</p>
+    </div>
+    <div style="display:flex; justify-content: space-between;">
+        <div class="date-btn" @onclick="(()=> SelectPreviousDateBtnClick(selectDate.AddDays(-1)))">
+            <img style="max-height:100%;max-width:100%;padding: 10px;" src="/Images/left-arrow.png" />
+        </div>
+
+        @if (dateDataButtons?.Count > 0)
+        {
+            @foreach (var dateDataButton in dateDataButtons)
+            {
+                <div class="date-btn @(selectDate == dateDataButton.Date ? "date-btn-select": "")" @onclick="(()=> SelectDateBtnClick(dateDataButtons.IndexOf(dateDataButton)))">
+                    <p style="margin:0;">@dateDataButton.Date.Day</p>
+                </div>
+            }
+        }
+
+        <div class="date-btn" @onclick="(()=> SelectNextDateBtnClick(selectDate.AddDays(1)))">
+            <img style="max-height:100%;max-width:100%;padding: 10px;" src="/Images/right-arrow.png" />
+        </div>
+    </div>
+    <div>
+        @if (showMessageLoading)
+        {
+            <p style="text-align:center;">Загрузка...</p>
+        }
+    </div>
+    <div class="container-schedule-cells">
+        @for (int i = 0; i < scheduleCells.Count; i++)
+        {
+            var selectScheduleCell = scheduleCells[i];
+        }
+    </div>
+</div>
 
 
 
 @code {
     private string pageTitle { get; set; } = "Расписание";
+
+    private bool showMessageLoading{ get; set; }
+
     private int groupId;
+    private int teacherId;
     private DateTime selectDate;
+    private DateTime startDate;
+
+    private List<DateDataButton> dateDataButtons  = new ();
+
+    private List<ScheduleCell> scheduleCells = new();
 
 
     [CascadingParameter]
@@ -24,7 +71,12 @@
         var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
 
         int.TryParse(query["groupId"], out groupId);
+        int.TryParse(query["teacherId"], out teacherId);
         DateTime.TryParse(query["selectDate"], out selectDate);
+
+
+
+
     }
 
     protected override async void OnAfterRender(bool firstRender)
@@ -33,17 +85,121 @@
         {
             ((MainLayout)Layout).ShowLoadingScreen();
 
+            if (selectDate.DayOfWeek == DayOfWeek.Sunday)
+            {
+                selectDate = selectDate.AddDays(1);
+                UpdateSelectDateForURL(true);
+                return;
+            }
+
+
             await InitSchedule();
 
-            StateHasChanged();
+
 
             ((MainLayout)Layout).HideLoadingScreen();
         }
     }
 
+    private void ShowMessageLoading(bool status)
+    {
+        showMessageLoading = status;
+
+        StateHasChanged();
+    }
+
 
     private async Task InitSchedule()
     {
-        var schedules = await Services.ScheduleAPIService.GetScheduleCells(groupId: groupId, selectDate: selectDate);
+        ShowMessageLoading(true);
+
+        InitDayOfWeekButtons();
+
+        var schedules = await Services.ScheduleAPIService.GetScheduleCells(groupId: groupId, teacherId: teacherId, date: selectDate);
+
+        StateHasChanged();
+
+        ShowMessageLoading(false);
+    }
+
+    private void InitDayOfWeekButtons()
+    {
+        var dayOfWeekRus = Services.DayOfWeekService.ConvertToDayOfWeekRus(selectDate.DayOfWeek);
+
+        startDate = selectDate.AddDays(-(int)dayOfWeekRus);
+
+        dateDataButtons = new List<DateDataButton>();
+
+        for (int i = 0; i < 6; i++)
+        {
+            dateDataButtons.Add(new DateDataButton()
+                {
+                    Date = startDate.AddDays(i)
+                });
+        }
+    }
+
+    private void UpdateSelectDateForURL(bool forceLoad = false)
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+
+        query["selectDate"] = selectDate.ToString("dd.MM.yyyy");
+
+        var newUri = $"{uri.GetLeftPart(UriPartial.Path)}?{query.ToString()}";
+        NavigationManager.NavigateTo(newUri, forceLoad: forceLoad);
+    }
+
+    private async Task SelectDateBtnClick(int index)
+    {
+        try
+        {
+            if(index < 0 || index > dateDataButtons.Count - 1)
+            {
+                return;
+            }
+
+            selectDate = dateDataButtons[index].Date;
+
+            UpdateSelectDateForURL();
+
+            await InitSchedule();
+
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex.ToString());   
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task SelectPreviousDateBtnClick(DateTime date)
+    {
+        selectDate = date;
+
+        if (selectDate.DayOfWeek == DayOfWeek.Sunday)
+        {
+            selectDate = selectDate.AddDays(-1);
+        }
+
+        UpdateSelectDateForURL();
+
+        await InitSchedule();
+    }
+
+
+    private async Task SelectNextDateBtnClick(DateTime date)
+    {
+        selectDate = date;
+
+        if (selectDate.DayOfWeek == DayOfWeek.Sunday)
+        {
+            selectDate = selectDate.AddDays(1);
+        }
+
+        UpdateSelectDateForURL();
+
+        await InitSchedule();
     }
 }

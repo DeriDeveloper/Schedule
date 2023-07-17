@@ -198,9 +198,32 @@ namespace WebApp.Services
         }
 
 
-        public static async Task<List<ScheduleCell>> GetScheduleCells(int groupId, DateTime selectDate)
+        public static async Task<List<ScheduleCell>?> GetScheduleCells(DateTime date, int? groupId = null, int? teacherId = null)
         {
-            return null;
+            try
+            {
+                var client = new HttpClient();
+                var request = new HttpRequestMessage(HttpMethod.Get, $"{urlAPI}/schedule/Get?date={date.ToString("yyyy.MM.dd")}&groupId={groupId}&teacherId={teacherId}");
+                var response = await client.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+
+                    return JsonConvert.DeserializeObject<List<ScheduleCell>>(responseContent);
+                }
+                else
+                {
+                    Debug.WriteLine($"statusCode: {response.StatusCode}");
+                    return null;
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+
+                return null;
+            }
         }
 
 

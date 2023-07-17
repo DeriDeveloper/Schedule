@@ -82,11 +82,14 @@ namespace WebApi.Controllers.Account
                 UserRole = user.UserRole
             };
 
-            user.AvatarProfileFileMetadatum = await _context.FileMetadata.FirstAsync(x => x.Id == user.AvatarProfileFileMetadatumId);
-
-            if (user.AvatarProfileFileMetadatum is not null)
+            if (user.AvatarProfileFileMetadatumId is not null)
             {
-                profileInfoResponse.ProfileAvatarName = user.AvatarProfileFileMetadatum.Name;
+                user.AvatarProfileFileMetadatum = await _context.FileMetadata.FirstAsync(x => x.Id == user.AvatarProfileFileMetadatumId);
+
+                if (user.AvatarProfileFileMetadatum is not null)
+                {
+                    profileInfoResponse.ProfileAvatarName = user.AvatarProfileFileMetadatum.Name;
+                }
             }
 
             if(user.StudentDetails?.Count > 0)

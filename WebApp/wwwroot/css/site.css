@@ -209,3 +209,22 @@ a {
 .mini-profile-top:hover {
     background-color: rgba(0, 0, 0, 0.2);
 }
+
+.date-btn {
+    border-radius: 5px;
+    background-color: #fff;
+    height: 40px;
+    width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor:pointer;
+}
+
+.date-btn-select {
+    background-color: #A687D0;
+}
+
+.date-btn-select p  {
+    color:#fff;
+}

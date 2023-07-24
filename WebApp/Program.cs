@@ -30,8 +30,19 @@ namespace WebApp
 
             app.UseRouting();
 
-            app.MapBlazorHub();
-            app.MapFallbackToPage("/_Host");
+            app.UseEndpoints(endpoint =>
+            {
+                endpoint.MapBlazorHub();
+                endpoint.MapFallbackToPage("/_Host");
+                endpoint.MapFallbackToPage("/auth", "/_Host");
+                endpoint.MapFallbackToPage("/index", "/_Host");
+                endpoint.MapFallbackToPage("/profile", "/_Host");
+                endpoint.MapFallbackToPage("/schedule", "/_Host");
+                endpoint.MapFallbackToPage("/teacher", "/_Host");
+                endpoint.MapFallbackToPage("/group/{id:int}", "/_Host");
+                endpoint.MapFallbackToPage("/admin/user/{id:int}", "/_Host");
+            });
+
 
             app.Run();
         }

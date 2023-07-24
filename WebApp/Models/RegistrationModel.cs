@@ -8,5 +8,6 @@
         public string Password { get; set; }
         public string RepeatPassword { get; set; }
         public int UserRoleId { get; set; }
+        public int CollegeId { get; set; }
     }
 }

@@ -19,9 +19,19 @@ public partial class User
 
     public int? AvatarProfileFileMetadatumId { get; set; }
 
+    public int CollegeId { get; set; }
+
+    public bool IsDeleted { get; set; }
+
     public virtual FileMetadatum? AvatarProfileFileMetadatum { get; set; }
 
+    public virtual College College { get; set; } = null!;
+
+    public virtual ICollection<HeadOfScheduleDepartmentDetail> HeadOfScheduleDepartmentDetails { get; set; } = new List<HeadOfScheduleDepartmentDetail>();
+
     public virtual ICollection<StudentDetail> StudentDetails { get; set; } = new List<StudentDetail>();
+
+    public virtual ICollection<TeacherDetail> TeacherDetails { get; set; } = new List<TeacherDetail>();
 
     public virtual ICollection<UserAccessToken> UserAccessTokens { get; set; } = new List<UserAccessToken>();
 

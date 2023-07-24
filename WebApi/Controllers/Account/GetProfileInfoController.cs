@@ -78,8 +78,10 @@ namespace WebApi.Controllers.Account
 
             var profileInfoResponse = new ProfileInfoResponse()
             {
+                Id = user.Id,
                 Name = user.Name,
-                UserRole = user.UserRole
+                UserRole = user.UserRole,
+                CollegeId = user.CollegeId
             };
 
             if (user.AvatarProfileFileMetadatumId is not null)

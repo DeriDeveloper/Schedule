@@ -1,0 +1,180 @@
+﻿@page "/admin/user/{id:int}"
+
+@using WebApp.Models;
+
+@inject NavigationManager NavigationManager
+
+
+@if (isThereAccess)
+{
+    <div>
+        <div style="display:flex;">
+            <div>
+                <AdminMenu></AdminMenu>
+            </div>
+            <div class="separator"></div>
+            <div class="container-block">
+                <div style="margin-top:10px;">
+                    <div style="display:flex;">
+                        <div class="block-input" style="width:100%;">
+                            <label>Имя</label>
+                            <div class="container-input">
+                                <input type="text" @bind="@user.Name" />
+                            </div>
+                        </div>
+                        <div class="separator"></div>
+                        <div class="block-input" style="width:100%;">
+                            <label>Логин</label>
+                            <div class="container-input">
+                                <input type="text" disabled @bind="@user.Login" />
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:flex;">
+                        <div class="block-input" style="width:100%;">
+                            <label>Тип пользователя</label>
+                            <div class="container-input">
+                                <select @onchange="HandleUserRoleSelectChange">
+                                    @foreach (var userRole in userRoles)
+                                    {
+                                        var userRoleEnum = (Types.Enums.UserRole)userRole.Id;
+
+                                        @if (Layout.UserRole != Types.Enums.UserRole.Developer)
+                                        {
+                                            @if (userRoleEnum == Types.Enums.UserRole.Developer || userRoleEnum == Types.Enums.UserRole.Administrator)
+                                            {
+                                                continue;
+                                            }
+                                        }
+
+                                        @if (userRole.Id == selectedUserRoleId)
+                                        {
+                                            <option value="@userRole.Id" selected>@userRole.Name</option>
+                                        }
+                                        else 
+                                        {
+                                            <option value="@userRole.Id">@userRole.Name</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="separator"></div>
+                        <div class="block-input" style="width:100%;">
+                            <label>Email</label>
+                            <div class="container-input">
+                                <input type="text" disabled @bind="@user.Email" />
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="block-input" style="width:100%;">
+                            <label>Колледж</label>
+                            <div class="container-input">
+                                <select @onchange="HandleCollegeSelectChange" disabled>
+                                    @foreach (var college in colleges)
+                                    {
+                                        @if (college.Id == selectedCollegeId)
+                                        {
+                                            <option value="@college.Id" selected>@college.Name</option>
+                                        }
+                                        else if (Layout.UserRole == Types.Enums.UserRole.Developer)
+                                        {
+                                            <option value="@college.Id">@college.Name</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <p>У вас нет прав!</p>
+}
+
+@code{
+    [CascadingParameter]
+    public MainLayout Layout { get; set; }
+
+    [Parameter]
+    public int Id { get; set; }
+
+
+    private User user = new();
+
+    private List<UserRole> userRoles =new();
+    private List<College> colleges = new();
+    private int selectedUserRoleId = new();
+    private int selectedCollegeId = new();
+
+
+    private bool isThereAccess;
+
+    protected override async void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Layout.RestartAfterRenderAsync(true);
+
+
+            if (Layout.UserRole != Types.Enums.UserRole.Administrator && Layout.UserRole != Types.Enums.UserRole.Developer)
+            {
+                isThereAccess = false;
+                StateHasChanged();
+                return;
+            }
+            else
+            {
+                isThereAccess = true;
+                StateHasChanged();
+            }
+
+            if (Id > 0)
+            {
+                UploadUser();
+
+                selectedCollegeId = Layout.CollegeId;   
+            }
+
+            StateHasChanged();
+        }
+    }
+
+    private async void UploadUser()
+    {
+        user = await Services.ScheduleAPIService.GetUserAsync(Layout.TokenAccess, Id);
+        userRoles = await Services.ScheduleAPIService.GetUserRolesAsync();
+        colleges = await Services.ScheduleAPIService.GetCollegesAsync();
+
+        StateHasChanged();
+    }
+
+    private void HandleUserRoleSelectChange(ChangeEventArgs e)
+    {
+        var value = e.Value.ToString();
+
+        if (string.IsNullOrEmpty(value))
+        {
+            return;
+        }
+
+        selectedUserRoleId = int.Parse(value);
+    }
+
+    private void HandleCollegeSelectChange(ChangeEventArgs e)
+    {
+        var value = e.Value.ToString();
+
+        if (string.IsNullOrEmpty(value))
+        {
+            return;
+        }
+
+        selectedCollegeId = int.Parse(value);
+    }
+}

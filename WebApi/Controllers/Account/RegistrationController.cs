@@ -78,6 +78,7 @@ namespace WebApi.Controllers.Account
                 HashPassword = hashPassword,
                 Name = model.Name,
                 UserRoleId = model.UserRoleId,
+                CollegeId = model.CollegeId
             };
 
             _context.Users.Add(user);

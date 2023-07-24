@@ -38,6 +38,11 @@ namespace WebApi.Controllers
                 return NotFound();
             }
 
+            if (user.IsDeleted)
+            {
+                return Unauthorized();
+            }
+
             if (HashService.VerifyHash(model.Password, user.HashPassword))
             {
                 var token = JwtHelperService.GenerateToken(user.Login, 1);

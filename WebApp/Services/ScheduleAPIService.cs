@@ -103,7 +103,157 @@ namespace WebApp.Services
                 return new List<UserRole>();
             }
         }
-        public static async Task<List<ResponseGroup>?> GetGroups(int collegeId, int year)
+
+
+        public static async Task<Models.User> GetUserAsync(string token, int userId)
+        {
+            try
+            {
+                var client = new HttpClient();
+                var request = new HttpRequestMessage(HttpMethod.Get, $"{urlAPI}/account/{userId}?accessToken={token}");
+                var response = await client.SendAsync(request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+
+                    if (!string.IsNullOrEmpty(responseContent))
+                    {
+                        var responseObj = JsonConvert.DeserializeObject<Models.User>(responseContent); ;
+
+                        if (responseObj is not null)
+                        {
+                            return responseObj;
+                        }
+                        else
+                        {
+                            return new();
+                        }
+                    }
+                    else
+                    {
+                        return new();
+                    }
+                }
+                else
+                {
+                    return new();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+                return new();
+            }
+        }
+        public static async Task<List<Models.AccountModel>?> GetAccountsAsync(string token, int skip, Types.Enums.UserOrderBy orderBy, int take = 10, string textSearch = "")
+        {
+            try
+            {
+                var client = new HttpClient();
+                var request = new HttpRequestMessage(HttpMethod.Get, $"{urlAPI}/accounts?take={take}&skip={skip}&accessToken={token}&orderBy={(int)orderBy}&textSeacrh={textSearch}");
+                var response = await client.SendAsync(request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+
+                    if (!string.IsNullOrEmpty(responseContent))
+                    {
+                        var responseObj = JsonConvert.DeserializeObject<List<Models.AccountModel>>(responseContent); ;
+
+                        if (responseObj is not null)
+                        {
+                            return responseObj;
+                        }
+                        else
+                        {
+                            return new();
+                        }
+                    }
+                    else
+                    {
+                        return new();
+                    }
+                }
+                else
+                {
+                    return new();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+                return new();
+            }
+        }
+
+        public static async Task<bool> DeleteUserAsync(string token, int userId)
+        {
+            try
+            {
+                var client = new HttpClient();
+                var request = new HttpRequestMessage(HttpMethod.Delete, $"{urlAPI}/user/{userId}?accessToken={token}");
+                var response = await client.SendAsync(request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+                return false;
+            }
+        }
+
+        public  static async Task<Models.Teacher> GetTeacherCuratorOfGroupAsync(int groupId)
+        {
+            try
+            {
+                var client = new HttpClient();
+                var request = new HttpRequestMessage(HttpMethod.Get, $"{urlAPI}/Teacher/CuratorOfGroup/{groupId}");
+                var response = await client.SendAsync(request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+
+                    if (!string.IsNullOrEmpty(responseContent))
+                    {
+                        var responseGroups = JsonConvert.DeserializeObject<Models.Teacher>(responseContent); ;
+
+                        if (responseGroups is not null)
+                        {
+                            return responseGroups;
+                        }
+                        else
+                        {
+                            return new();
+                        }
+                    }
+                    else
+                    {
+                        return new();
+                    }
+                }
+                else
+                {
+                    return new();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+                return new();
+            }
+        }
+        public static async Task<List<ResponseGroup>> GetGroupsAsync(int collegeId, int year)
         {
             try
             {
@@ -115,17 +265,33 @@ namespace WebApp.Services
                 {
                     var responseContent = await response.Content.ReadAsStringAsync();
 
-                    return JsonConvert.DeserializeObject<List<ResponseGroup>>(responseContent);
+                    if(!string.IsNullOrEmpty(responseContent))
+                    {
+                        var responseGroups = JsonConvert.DeserializeObject<List<ResponseGroup>>(responseContent); ;
+
+                        if(responseGroups is not null)
+                        {
+                            return responseGroups;
+                        }
+                        else
+                        {
+                            return new List<ResponseGroup>();
+                        }
+                    }
+                    else
+                    {
+                        return new List<ResponseGroup>();
+                    }
                 }
                 else
                 {
-                    return null;
+                    return new List<ResponseGroup>();
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.ToString());
-                return null;
+                return new List<ResponseGroup>();
             }
         }
         public static async Task<bool> ValidTokenAsync(string token)
@@ -157,7 +323,6 @@ namespace WebApp.Services
                 return false;
             }
         }
-
         public static async Task<(HttpStatusCode? status, ResponseAuth? response)> AuthorizationAsync(string login, string password)
         {
             try
@@ -196,8 +361,6 @@ namespace WebApp.Services
                 return (status: null, response: null);
             }
         }
-
-
         public static async Task<List<ScheduleCell>?> GetScheduleCells(DateTime date, int? groupId = null, int? teacherId = null)
         {
             try
@@ -225,12 +388,139 @@ namespace WebApp.Services
                 return null;
             }
         }
+        public static async Task<List<Teacher>> GetTeachersAsync(int collegeId)
+        {
+            try
+            {
+                var client = new HttpClient();
+                var request = new HttpRequestMessage(HttpMethod.Get, $"{urlAPI}/teachers/Get?collegeId={collegeId}");
+                var response = await client.SendAsync(request);
 
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+
+                    if (!string.IsNullOrEmpty(responseContent))
+                    {
+                        var responseGroups = JsonConvert.DeserializeObject<List<Teacher>>(responseContent); ;
+
+                        if (responseGroups is not null)
+                        {
+                            return responseGroups;
+                        }
+                        else
+                        {
+                            return new List<Teacher>();
+                        }
+                    }
+                    else
+                    {
+                        return new List<Teacher>();
+                    }
+                }
+                else
+                {
+                    return new List<Teacher>();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+                return new List<Teacher>();
+            }
+
+        }
+
+        public static async Task<Teacher> GetTeacherAsync(int id)
+        {
+            try
+            {
+                var client = new HttpClient();
+                var request = new HttpRequestMessage(HttpMethod.Get, $"{urlAPI}/teacher/{id}");
+                var response = await client.SendAsync(request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+
+                    if (!string.IsNullOrEmpty(responseContent))
+                    {
+                        var teacher = JsonConvert.DeserializeObject<Teacher>(responseContent); ;
+
+                        if (teacher is not null)
+                        {
+                            return teacher;
+                        }
+                        else
+                        {
+                            return new();
+                        }
+                    }
+                    else
+                    {
+                        return new();
+                    }
+                }
+                else
+                {
+                    return new();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+                return new();
+            }
+
+        }
+
+        public static async Task<TeacherDetail> GetTeacherDetailAsync(int userId)
+        {
+            try
+            {
+                var client = new HttpClient();
+                var request = new HttpRequestMessage(HttpMethod.Get, $"{urlAPI}/teacherDetail/{userId}");
+                var response = await client.SendAsync(request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+
+                    if (!string.IsNullOrEmpty(responseContent))
+                    {
+                        var teacherDetail = JsonConvert.DeserializeObject<TeacherDetail>(responseContent); ;
+
+                        if (teacherDetail is not null)
+                        {
+                            return teacherDetail;
+                        }
+                        else
+                        {
+                            return new();
+                        }
+                    }
+                    else
+                    {
+                        return new();
+                    }
+                }
+                else
+                {
+                    return new();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+                return new();
+            }
+
+        }
 
 
         public class Account
         {
-            public static async Task<ResponseRegistration?> RegistariotionAsync(string login, string password, string name, string email, int userRoleId)
+            public static async Task<ResponseRegistration?> RegistariotionAsync(string login, string password, string name, string email, int userRoleId, int collegeId)
             {
                 try
                 {
@@ -240,7 +530,8 @@ namespace WebApp.Services
                         Password = password,
                         Name = name,
                         Email = email,
-                        UserRoleId = userRoleId
+                        UserRoleId = userRoleId,
+                        CollegeId = collegeId,
                     };
 
 

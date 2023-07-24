@@ -16,4 +16,6 @@ public partial class Group
     public virtual College College { get; set; } = null!;
 
     public virtual ICollection<StudentDetail> StudentDetails { get; set; } = new List<StudentDetail>();
+
+    public virtual ICollection<TeacherDetail> TeacherDetails { get; set; } = new List<TeacherDetail>();
 }

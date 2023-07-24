@@ -1,0 +1,59 @@
+﻿@page "/admin"
+
+
+
+@inject NavigationManager NavigationManager
+
+
+
+@if (isThereAccess)
+{
+    <div>
+        <div style="display:flex;">
+            <div>
+                <AdminMenu></AdminMenu>
+            </div>
+            <div class="separator"></div>
+            <div class="container-block" style="width:100%;">
+                <p style="font-size:30px; text-align:center;">Добро пожаловать!</p>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <p>У вас нет прав!</p>
+}
+
+
+
+@code{
+    [CascadingParameter]
+    public MainLayout Layout { get; set; }
+
+    private bool isThereAccess;
+
+
+
+    protected override async void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Layout.RestartAfterRenderAsync(true);
+
+            if (Layout.UserRole != Types.Enums.UserRole.Administrator && Layout.UserRole != Types.Enums.UserRole.Developer)
+            {
+                isThereAccess = false;
+                StateHasChanged();
+                return;
+            }
+            else
+            {
+                isThereAccess = true;
+                StateHasChanged();
+            }
+
+            //
+        }
+    }
+}

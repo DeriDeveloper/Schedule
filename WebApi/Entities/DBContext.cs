@@ -25,6 +25,8 @@ public partial class DBContext : DbContext
 
     public virtual DbSet<Group> Groups { get; set; }
 
+    public virtual DbSet<HeadOfScheduleDepartmentDetail> HeadOfScheduleDepartmentDetails { get; set; }
+
     public virtual DbSet<ScheduleCell> ScheduleCells { get; set; }
 
     public virtual DbSet<ScheduleCellAudience> ScheduleCellAudiences { get; set; }
@@ -37,15 +39,18 @@ public partial class DBContext : DbContext
 
     public virtual DbSet<StudentDetail> StudentDetails { get; set; }
 
+    public virtual DbSet<TeacherDetail> TeacherDetails { get; set; }
+
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<UserAccessToken> UserAccessTokens { get; set; }
 
     public virtual DbSet<UserRole> UserRoles { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+	protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
          => optionsBuilder.UseSqlServer(Program.config.GetConnectionString("DBConnectionString"));
 
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<FileMetadatum>(entity =>
@@ -62,6 +67,19 @@ public partial class DBContext : DbContext
                 .HasForeignKey(d => d.CollegeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Groups_Colleges");
+        });
+
+        modelBuilder.Entity<HeadOfScheduleDepartmentDetail>(entity =>
+        {
+            entity.HasOne(d => d.College).WithMany(p => p.HeadOfScheduleDepartmentDetails)
+                .HasForeignKey(d => d.CollegeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_HeadOfScheduleDepartmentDetails_Colleges");
+
+            entity.HasOne(d => d.User).WithMany(p => p.HeadOfScheduleDepartmentDetails)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_HeadOfScheduleDepartmentDetails_Users");
         });
 
         modelBuilder.Entity<ScheduleCell>(entity =>
@@ -143,6 +161,18 @@ public partial class DBContext : DbContext
                 .HasConstraintName("FK_StudentDetails_Users");
         });
 
+        modelBuilder.Entity<TeacherDetail>(entity =>
+        {
+            entity.HasOne(d => d.CuratorOfGroup).WithMany(p => p.TeacherDetails)
+                .HasForeignKey(d => d.CuratorOfGroupId)
+                .HasConstraintName("FK_TeacherDetails_Groups");
+
+            entity.HasOne(d => d.User).WithMany(p => p.TeacherDetails)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TeacherDetails_Users");
+        });
+
         modelBuilder.Entity<User>(entity =>
         {
             entity.Property(e => e.Email).HasMaxLength(254);
@@ -150,6 +180,11 @@ public partial class DBContext : DbContext
             entity.HasOne(d => d.AvatarProfileFileMetadatum).WithMany(p => p.Users)
                 .HasForeignKey(d => d.AvatarProfileFileMetadatumId)
                 .HasConstraintName("FK_Users_FileMetadata");
+
+            entity.HasOne(d => d.College).WithMany(p => p.Users)
+                .HasForeignKey(d => d.CollegeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Users_Colleges");
 
             entity.HasOne(d => d.UserRole).WithMany(p => p.Users)
                 .HasForeignKey(d => d.UserRoleId)

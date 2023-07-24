@@ -36,9 +36,11 @@ Welcome to your new app.
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+         if (firstRender)
         {
             ((MainLayout)Layout).ShowLoadingScreen();
+
+            await ((MainLayout)Layout).RestartAfterRenderAsync(true);
 
             tokenAccess = await _cookieHelperService.GetTokenAccessAsync();
 
@@ -56,8 +58,16 @@ Welcome to your new app.
                         {
                             var selectGroupId = profileInfoResponse.StudentDetail.GroupId;
 
-                            NavigationManager.NavigateTo($"/schedule?groupId={selectGroupId}&selectDate={DateTime.Now.ToString("dd.MM.yyyy")}");
+                            NavigationManager.NavigateTo($"/schedule?groupId={selectGroupId}&selectDate={DateTime.Today.ToString("dd.MM.yyyy")}");
                         }
+                    }
+                    else if (userRole == Types.Enums.UserRole.Teacher)
+                    {
+                        NavigationManager.NavigateTo($"/schedule?teacherId={profileInfoResponse.Id}&selectDate={DateTime.Today.ToString("dd.MM.yyyy")}");
+                    }
+                    else if (userRole == Types.Enums.UserRole.Administrator || userRole == Types.Enums.UserRole.Developer)
+                    {
+                        NavigationManager.NavigateTo($"/admin");
                     }
                 }
             }

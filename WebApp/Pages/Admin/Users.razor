@@ -1,0 +1,279 @@
+﻿@page "/admin/users"
+@using WebApp.Models;
+
+@inject NavigationManager NavigationManager
+
+
+@if (isThereAccess)
+{
+    <div>
+        <div style="display:flex;">
+            <div>
+                <AdminMenu></AdminMenu>
+            </div>
+            <div style="margin-left:15px;" class="container-block">
+                <div style="display: flex; flex-direction: row; justify-content: flex-start;">
+                    <button style="width: auto; margin-right:10px;" class="btn btn-primary" @onclick="(()=>AddNewUser())">Добавить</button>
+                    <button style="width: auto; margin-right:10px;" @onclick="(()=>DeleteSelectAccounts())" class="btn btn-danger">Удалить выбранные</button>
+                    <button style="width: auto; margin-right:10px;" @onclick="(()=>UpdateAccounts())" class="btn btn-secondary">Обновить</button>
+                    <button style="width: auto; margin-right:10px;" @onclick="(()=>ShowFilter())" class="btn btn-secondary">
+                        <div style="display:flex">
+                            <p style="margin: 0 10px 0 0;">Фильтр</p>
+                            <div style="height:20px;width:20px;">
+                                <img src="/Images/@(isShowFilter ? "arrow-top.png" : "arrow-bottom.png")" style="width:100%; height:100%;" />
+                            </div>
+                        </div>
+                    </button>
+                </div>
+                @if (isShowFilter)
+                {
+                    <div style="margin-top:10px;">
+                        <div style="display:flex;">
+                            <div class="block-input">
+                                <label>Сортировать по</label>
+                                <div class="container-input">
+                                    <select @onchange="HandleUserORderBySelectChange">
+                                        <option value="@((int)Types.Enums.UserOrderBy.None)" selected></option>
+                                        <option value="@((int)Types.Enums.UserOrderBy.Id)">№ (по возрастанию)</option>
+                                        <option value="@((int)Types.Enums.UserOrderBy.IdDesc)">№ (по убыванию)</option>
+                                        <option value="@((int)Types.Enums.UserOrderBy.Name)">Имени (по возрастанию)</option>
+                                        <option value="@((int)Types.Enums.UserOrderBy.NameDesc)">Имени (по убыванию)</option>
+                                        <option value="@((int)Types.Enums.UserOrderBy.Email)">Email (по возрастанию)</option>
+                                        <option value="@((int)Types.Enums.UserOrderBy.EmailDesc)">Email (по убыванию)</option>
+                                        <option value="@((int)Types.Enums.UserOrderBy.UserRole)">Роли (по возрастанию)</option>
+                                        <option value="@((int)Types.Enums.UserOrderBy.UserRoleDesc)">Роли (по убыванию)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="separator"></div>
+                            <div class="block-input">
+                                <label>Поиск</label>
+                                <div class="container-input">
+                                    <input type="text" @bind="@filterSearchText" />
+                                </div>
+                            </div>
+                            <div class="separator"></div>
+                            <div class="block-input" style="width:auto;">
+                                <label>Кол-во записей</label>
+                                <div class="container-input">
+                                    <select @onchange="HandleCountAccountsSelectChange">
+                                        <option value="5">5</option>
+                                        <option value="10" selected>10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+                <div style="margin:10px 0; border-radius:10px; background-color:#E1E1E1;">
+                    <table style="overflow:hidden;">
+                        <tr class="tr-container-header" >
+                            <td class="td-container"></td>
+                            <td class="td-container"></td>
+                            <td class="td-container">№</td>
+                            <td class="td-container">Имя</td>
+                            <td class="td-container">Логин</td>
+                            <td class="td-container">Роль</td>
+                            <td class="td-container">Email</td>
+                        </tr>
+
+                        @foreach (var account in accounts)
+                        {
+                            <tr class="tr-container @(accounts.IndexOf(account) % 2 == 0 ? "tr-container-bg-row" :"tr-container-bg-alternative-row")">
+                                <td class="td-container">
+                                    <input type="checkbox" checked="@(selectedAccounts.Contains(account.Id) ? true : false )" @onchange="((e) => CheckboxChangeSelectAccount(e, account.Id))" />
+                                </td>
+                                <td>
+                                    <div style="max-width:15px; max-height:15px;" class="edit-icon-container" @onclick="(()=>EditUser(account.Id))">
+                                        <img  style="width:100%; height:100%;" src="/Images/edit.png"/>
+                                    </div>
+                                </td>
+                                <td class="td-container">@account.Id</td>
+                                <td class="td-container">@account.Name</td>
+                                <td class="td-container">@account.Login</td>
+                                <td class="td-container">@account.UserRole?.Name</td>
+                                <td class="td-container">@account.Email</td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <p>У вас нет прав!</p>
+}
+
+
+
+@code {
+    [CascadingParameter]
+    public MainLayout Layout { get; set; }
+
+    private bool isThereAccess;
+
+    private Types.Enums.UserOrderBy selectUserOrderBy;
+
+    private List<int> selectedAccounts = new();
+
+    private bool isShowFilter;
+    private string filterSearchText;
+
+    private List<Models.AccountModel> accounts = new();
+
+    private int take = 10;
+    private int skip;
+
+    protected override async void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Layout.RestartAfterRenderAsync(true);
+
+
+            if (Layout.UserRole != Types.Enums.UserRole.Administrator && Layout.UserRole != Types.Enums.UserRole.Developer)
+            {
+                isThereAccess = false;
+                StateHasChanged();
+                return;
+            }
+            else
+            {
+                isThereAccess = true;
+                StateHasChanged();
+            }
+
+            UploadUsers();
+
+            StateHasChanged();
+        }
+    }
+
+
+    private void AddNewUser()
+    {
+        NavigationManager.NavigateTo("/admin/user/0");    
+    }
+
+    private void EditUser(int id)
+    {
+        NavigationManager.NavigateTo($"/admin/user/{id}");
+    }
+
+    private void OpenUserEdit(int id)
+    {
+    }
+
+    private async void UploadUsers()
+    {
+        if (!string.IsNullOrEmpty(Layout.TokenAccess))
+        {
+            accounts = await Services.ScheduleAPIService.GetAccountsAsync(Layout.TokenAccess, take: take, skip: skip, orderBy: selectUserOrderBy, textSearch: filterSearchText) ?? new();
+        }
+
+        StateHasChanged();
+    }
+
+    private void ShowFilter()
+    {
+        isShowFilter = !isShowFilter;
+
+        StateHasChanged();
+    }
+
+    private void CheckboxChangeSelectAccount(ChangeEventArgs e, int accountId)
+    {
+        var isChecked = (bool)e.Value;
+
+        if (isChecked)
+        {
+            if (!selectedAccounts.Contains(accountId))
+            {
+                selectedAccounts.Add(accountId);
+            }
+        }
+        else
+        {
+            if (selectedAccounts.Contains(accountId))
+            {
+                selectedAccounts.Remove(accountId);
+            }
+        }
+    }
+
+    private async void DeleteSelectAccounts()
+    {
+        if (selectedAccounts.Count==0)
+        {
+            await Layout.AlertMessageAsync("Не один пользователь не выбран!");
+
+            return;
+        }
+
+
+        var result = await Layout.ConfirmDialogShowAsync("Вы уверены что хотите удалить?");
+
+        if (!result)
+        {
+            return;
+        }
+
+        Dictionary<int, bool> statuses = new(); 
+
+
+        foreach (var userId in selectedAccounts)
+        {
+            var status = await Services.ScheduleAPIService.DeleteUserAsync(Layout.TokenAccess, userId);
+
+            statuses.Add(userId, status);
+
+        }
+
+        foreach (var info in statuses)
+        {
+            if (info.Value)
+            {
+                selectedAccounts.Remove(info.Key);
+            }
+        }
+
+
+
+        await Layout.AlertMessageAsync($"Удалено пользователей {statuses.Where(x=>x.Value == true).Count()} из {statuses.Count}");
+
+        UploadUsers();
+    }
+
+    private async void HandleCountAccountsSelectChange(ChangeEventArgs e)
+    {
+        if (string.IsNullOrEmpty(e.Value as string))
+        {
+            await Layout.AlertMessageAsync("Не выбрано кол-во записей");
+            return;
+        }
+        take = int.Parse((string)e.Value);
+
+        StateHasChanged();
+    }
+    private async void HandleUserORderBySelectChange(ChangeEventArgs e)
+    {
+        if(e.Value is null)
+        {
+            return;
+        }
+        selectUserOrderBy = (Types.Enums.UserOrderBy)int.Parse((string)e.Value);
+
+        StateHasChanged();
+    }
+
+    private void UpdateAccounts()
+    {
+        UploadUsers();
+    }
+}

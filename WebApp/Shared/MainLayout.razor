@@ -1,8 +1,10 @@
 ﻿@using System.Diagnostics;
+@using WebApp.Models;
 @using WebApp.Services;
 @inherits LayoutComponentBase
 
 @inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
 
 
 <PageTitle>Расписание</PageTitle>
@@ -32,9 +34,34 @@
                                 <p style="margin:0 0 0 10px; color:#fff; font-size: 24px;">Расписание</p>
                         </div>
                     </a>
-                    <div>
+                    <div style="position:relative; margin-left: 10px;">
                         <div style="border-radius:5px; background-color:#fff;">
-                            <input type="text" @bind="@searchText" @oninput="HandleInputSearchTextChange" />
+                                <input type="text" @bind="@searchText" @oninput="HandleInputSearchTextChange" @onfocus="HandelFocusInputSearchTextChange" @onblur="HandelBlurInputSearchTextChange" />
+                        </div>
+                        <div style="@(showResultContainerSearchBar ? "display:flex;" : "display:none;") overflow: overlay; height: 250px;"  class="search-result-list-container">
+                            <div style="max-width:100%;">
+                                    <p style="margin:0;">Группы</p>
+
+                                <div>
+                                    @foreach (var group in GroupsSearchResult)
+                                    {
+                                        <div class="container-item-search-result" @onclick="@(()=> OpenGroupPage(group.Id))">
+                                            <p style="margin:0; text-wrap: wrap;">@group.Name</p>
+                                        </div>
+                                    }
+                                </div>
+
+                                    <p style="margin:0;">Преподаватели</p>
+
+                                <div>
+                                    @foreach (var teacher in TeachersSearchResult)
+                                    {
+                                        <div class="container-item-search-result" @onclick="@(()=> OpenTeacherPage(teacher.Id))">
+                                            <p style="margin:0; text-wrap: wrap;">@teacher.Name</p>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -60,7 +87,9 @@
             </div>
         </div>
         <article class="content px-4" style="margin-bottom: 20px;">
-            @Body
+            <div style="max-width:1200px; margin: 0 auto;">
+                @Body
+            </div>
         </article>
     </main>
     <footer>
@@ -82,15 +111,24 @@
     private bool isAuthorized { get; set; } = false;
     private string UserName { get; set; }
     private string UrlProfileAvatar { get; set; }
-    private string? tokenAccess { get; set; }
+    public string? TokenAccess { get; set; }
+    public Types.Enums.UserRole UserRole { get; set; }
+    public int CollegeId { get; set; }
     private bool showAuthorizBlock { get; set; } = false;
     private bool showLoadingScreen { get; set; } = true;
     private bool showContentPage { get; set; } = false;
+    private bool showResultContainerSearchBar { get; set; }
+
+
 
     private string searchText { get; set; } = "";
-
+    private List<ResponseGroup> GroupsSearchResult { get; set; } = new();
+    private List<Models.Teacher> TeachersSearchResult { get; set; } = new();
 
     private AccountService _accountService;
+
+
+    private CancellationTokenSource searchBarCancellationTokenSource;
 
 
     protected override async void OnInitialized()
@@ -104,21 +142,26 @@
         {
             if (firstRender)
             {
-                //ShowLoadingScreen();
+                ShowLoadingScreen();
 
 
 
-                tokenAccess = await _accountService.GetTokenAccessAsync();
+                TokenAccess = await _accountService.GetTokenAccessAsync();
 
-                var profileInfoResponse = await Services.ScheduleAPIService.Account.GetProfileInfoAsync(tokenAccess);
+                var profileInfoResponse = await Services.ScheduleAPIService.Account.GetProfileInfoAsync(TokenAccess);
 
                 if (profileInfoResponse is not null)
                 {
                     isAuthorized = true;
 
-                    UserName = profileInfoResponse.Name;
-                    UrlProfileAvatar = $"{Program.UrlAPI}/images/get/{profileInfoResponse.ProfileAvatarName}";
+                    if (profileInfoResponse.UserRole is not null)
+                    {
+                        UserRole = (Types.Enums.UserRole)profileInfoResponse.UserRole.Id;
+                    }
 
+                    UserName = profileInfoResponse.Name;
+                    CollegeId = profileInfoResponse.CollegeId;
+                    UrlProfileAvatar = $"{Program.UrlAPI}/images/get/{profileInfoResponse.ProfileAvatarName}";
                 }
 
                 showAuthorizBlock = true;
@@ -135,15 +178,150 @@
     }
 
 
-
-
-    private void HandleInputSearchTextChange(ChangeEventArgs e)
+    private void OpenGroupPage(int id)
     {
-        var text = e.Value;
+        try
+        {
+            if (id > 0)
+            {
+                searchText = "";
+                NavigationManager.NavigateTo($"/group/{id}", true);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex.ToString());
+        }
 
-        //тут вести поиск в группах и учителях и выводить список небольшой ниже чем это поле
+        showResultContainerSearchBar = false;
 
         StateHasChanged();
+    }
+
+
+
+    private async void HandelFocusInputSearchTextChange()
+    {
+        showResultContainerSearchBar = true;
+
+        StateHasChanged();
+
+
+        try
+        {
+            await Task.Run(async () =>
+            {
+                await FillResultSearchBarAsync("");
+            });
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex.ToString());
+        }
+
+
+
+        StateHasChanged();
+    }
+
+    private void HandelBlurInputSearchTextChange()
+    {
+        Task.Run(() =>
+       {
+           Thread.Sleep(500);
+
+           showResultContainerSearchBar = false;
+
+           InvokeAsync(() =>
+           {
+               StateHasChanged();
+           });
+       });
+    }
+
+    private void OpenTeacherPage(int id)
+    {
+        try
+        {
+            if (id > 0)
+            {
+                searchText = "";
+                NavigationManager.NavigateTo($"/teacher/{id}", true);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex.ToString());
+        }
+
+        showResultContainerSearchBar = false;
+
+        StateHasChanged();
+    }
+
+    private async void HandleInputSearchTextChange(ChangeEventArgs e)
+    {
+        if (e.Value is not null)
+        {
+            var text = e.Value.ToString();
+
+            if (CollegeId > 0)
+            {
+                searchBarCancellationTokenSource?.Cancel();
+
+                showResultContainerSearchBar = false;
+
+                StateHasChanged();
+
+                searchBarCancellationTokenSource = new CancellationTokenSource();
+                var cancellationToken = searchBarCancellationTokenSource.Token;
+
+                try
+                {
+                    await Task.Run(async () =>
+                    {
+                        await FillResultSearchBarAsync(text);
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.ToString());
+                }
+            }
+
+        }
+    }
+
+    public async Task RestartAfterRenderAsync(bool firstRender)
+    {
+        await OnAfterRenderAsync(firstRender);
+    }
+
+    public async Task FillResultSearchBarAsync(string text)
+    {
+        var academicYear = Services.DateService.GetCurrentAcademicYear();
+
+        GroupsSearchResult = await Services.ScheduleAPIService.GetGroupsAsync(CollegeId, academicYear);
+        TeachersSearchResult = await Services.ScheduleAPIService.GetTeachersAsync(CollegeId);
+
+        if (!string.IsNullOrEmpty(text))
+        {
+
+            GroupsSearchResult = GroupsSearchResult.Where(x => x.Name.Contains(text, StringComparison.InvariantCultureIgnoreCase)).ToList();
+            TeachersSearchResult = TeachersSearchResult.Where(x => x.Name.Contains(text, StringComparison.InvariantCultureIgnoreCase)).ToList();
+        }
+
+        await InvokeAsync(() =>
+        {
+            StateHasChanged();
+        });
+
+        showResultContainerSearchBar = true;
+
+        await InvokeAsync(() =>
+        {
+            StateHasChanged();
+        });
     }
 
     public void ShowLoadingScreen()
@@ -161,5 +339,25 @@
         showContentPage = true;
 
         StateHasChanged();
+    }
+
+    public async Task<bool> ConfirmDialogShowAsync(string text)
+    {
+        var result = false;
+
+        await InvokeAsync(async () =>
+        {
+            result = await JSRuntime.InvokeAsync<bool>("confirm", text);
+        });
+
+        return result;
+    }
+
+    public async Task AlertMessageAsync(string text)
+    {
+        await InvokeAsync(async () =>
+        {
+            await JSRuntime.InvokeVoidAsync("alert", text);
+        });
     }
 }

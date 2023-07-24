@@ -125,7 +125,13 @@
 
     </div>*@
 
-    <button class="btn btn-danger" style="margin-top: 20px;" @onclick="Logout">Выйти</button>
+    @if ((Types.Enums.UserRole) profileModel.UserRole.Id == Types.Enums.UserRole.Administrator)
+    {
+        <button class="btn btn-secondary" style="margin-top: 20px;" @onclick="Administration">Администрирование</button>
+
+    }
+
+    <button class="btn btn-danger" style="margin-top: 20px;" @onclick="LogoutAsync">Выйти</button>
 </div>
 
 @code {
@@ -170,10 +176,10 @@
 
     private string urlProfileAvatar { get; set; }
 
-    private List<College> Colleges { get; set; } = new List<College>();
+    private List<College> Colleges { get; set; } = new();
     private int selectedCollegeId { get; set; }
 
-    private List<Group> Groups { get; set; } = new List<Group>();
+    private List<Models.Group> Groups { get; set; } = new();
     private int selectedGroupId { get; set; }
 
 
@@ -255,6 +261,11 @@
         }
     }
 
+    private void Administration()
+    {
+        NavigationManager.NavigateTo("/admin");
+    }
+
     private async void UploadAvatarProfileButtonClick()
     {
         //await JSRuntime.InvokeVoidAsync("clickElement", fileInputAvatarProfile);
@@ -296,7 +307,7 @@
                 }
                 catch (Exception ex)
                 {
-                    
+
                 }
 
                 StateHasChanged();
@@ -308,7 +319,7 @@
         }
         catch (Exception ex)
         {
-            
+
         }
 
     }
@@ -342,7 +353,7 @@
 
         selectedGroupId = 0;
 
-        Groups = new List<Group>();
+        Groups = new List<Models.Group>();
 
 
         if (string.IsNullOrEmpty(e.Value as string))
@@ -360,31 +371,17 @@
 
     private async Task UploadGroupSelectAsync()
     {
-        var dateNow = DateTime.Now;
+        var academicYear = Services.DateService.GetCurrentAcademicYear();
 
-        var currentYear = dateNow.Year;
-        var currentMonth = dateNow.Month;
+        var responseGroups = await Services.ScheduleAPIService.GetGroupsAsync(selectedCollegeId, academicYear);
 
-        int resultYear = 0;
-
-        if (currentMonth > 8)
-        {
-            resultYear = currentYear;
-        }
-        else
-        {
-            resultYear = currentYear - 1;
-        }
-
-        var responseGroups = await Services.ScheduleAPIService.GetGroups(selectedCollegeId, resultYear);
-
-        Groups = new List<Group>();
+        Groups = new List<Models.Group>();
 
         if (responseGroups is not null)
         {
             foreach (var responseGroup in responseGroups)
             {
-                Groups.Add(new Group()
+                Groups.Add(new Models.Group()
                     {
                         Id = responseGroup.Id,
                         CollegeId = responseGroup.CollegeId,
@@ -417,9 +414,10 @@
 
     }
 
-    private void Logout(MouseEventArgs e)
+    private async void LogoutAsync(MouseEventArgs e)
     {
         _accountService.Logout();
+        await Layout.RestartAfterRenderAsync(true);
         NavigationManager.NavigateTo("/auth");
     }
 
@@ -447,6 +445,7 @@
     {
         focusInputName = true;
     }
+
 
     private void HandelBlurInputName()
     {

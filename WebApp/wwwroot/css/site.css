@@ -93,9 +93,9 @@ a, .btn-link {
     color: white;
 }
 
-    .blazor-error-boundary::after {
-        content: "An error has occurred."
-    }
+.blazor-error-boundary::after {
+    content: "An error has occurred."
+}
 
 
 
@@ -172,6 +172,8 @@ body {
 .container-block {
     border-radius: 10px;
     background-color: white;
+    padding:10px;
+    border-radius:10px;
 }
 
 .pd-20{
@@ -227,4 +229,96 @@ a {
 
 .date-btn-select p  {
     color:#fff;
+}
+
+
+.search-result-list-container {
+    background-color: #fff;
+    width: 100%;
+    float: right;
+    position: absolute;
+    top: calc(100% + 4px);
+    word-wrap: break-word;
+    z-index: 800;
+    padding: 10px;
+    display: flex;
+    row-gap: 10px;
+    border-radius: 10px;
+    flex-direction: column;
+}
+
+.container-item-search-result{
+    padding:5px;
+    cursor:pointer;
+    border-radius:5px;
+}
+
+.container-item-search-result:hover{
+    background-color: #DFC8FF;
+}
+
+.btn-nav-menu {
+    border-radius: 5px;
+    padding:5px;
+    display: flex;
+    cursor: pointer;
+    align-items: center;
+}
+.btn-nav-menu p{
+    margin: 0 0 0 10px;
+}
+
+
+.btn-nav-menu:hover {
+    background-color: rgba(0,0,0,0.2);
+}
+
+.td-container {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.tr-container {
+    margin-bottom: 10px;
+    margin-top: 10px;
+    
+}
+
+.tr-container:hover{
+    background-color:rgba(0,0,0,0.2);
+  
+}
+
+
+
+
+.edit-icon-container {
+    display: flex;
+    cursor:pointer;
+}
+
+input[type=checkbox]{
+    cursor:pointer;
+}
+
+.tr-container-bg-row {
+    background-color: #DFC8FF;
+}
+
+
+
+.tr-container-bg-alternative-row {
+    background-color: #D0AFFF;
+}
+
+.tr-container-header {
+    border-radius: 30px;
+    background-color: #CACACA;
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+
+.separator {
+    width: 20px;
+    height: 20px;
 }

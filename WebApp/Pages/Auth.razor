@@ -52,7 +52,7 @@
                     <p class="warning-color" style="margin: 0; margin-top: 15px; ">@(textGlobalMessage)</p>
                 }
 
-                <button class="btn btn-secondary" style="margin-top: 20px;" @onclick="ShowSignUp">Зарегистрироваться</button>
+                @*<button class="btn btn-secondary" style="margin-top: 20px;" @onclick="ShowSignUp">Зарегистрироваться</button>*@
             </div>
         </div>
     </div>
@@ -133,6 +133,29 @@ else
                         <p class="warning-color" style="margin: 0;">@(textErrorMessageInputUserRoleSignUp)</p>
                     }
                 </div>
+                <div class="block-input">
+                    <label>Колледж</label>
+                    <div class="container-input @(focusInputCollegeSignUp ? "container-input-focus": "")">
+                        <select @onchange="HandleCollegeSelectChangeSignUp" @onfocus="HandelFocusInputCollegeSignUp" @onblur="HandelBlurInputCollegeSignUp">
+                            <option selected value=""></option>
+                            @foreach (var college in Colleges)
+                            {
+                                @if (college.Id == selectedCollegeId)
+                                {
+                                    <option value="@college.Id" selected>@college.Name</option>
+                                }
+                                else
+                                {
+                                    <option value="@college.Id">@college.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    @if (showErrorMessageInputCollegeSignUp)
+                    {
+                        <p class="warning-color" style="margin: 0;">@(textErrorMessageInputCollegeSignUp)</p>
+                    }
+                </div>
                 <button class="btn btn-primary" disabled="@(!isButtonEnabledSignUp)" style="margin-top: 20px;" @onclick="SignUp">Зарегистрироваться</button>
                 @if (showGlobalMessageSignUp)
                 {
@@ -186,6 +209,7 @@ else
     private bool focusInputPasswordSignUp { get; set; }
     private bool focusInputRepeatPasswordSignUp { get; set; }
     private bool focusInputUserRoleSignUp { get; set; }
+    private bool focusInputCollegeSignUp { get; set; }
 
     private bool showPasswordSignUp { get; set; }
     private bool showRepeatPasswordSignUp { get; set; }
@@ -193,6 +217,7 @@ else
     private bool showErrorMessageInputPasswordSignUp { get; set; }
     private bool showErrorMessageInputRepeatPasswordSignUp { get; set; }
     private bool showErrorMessageInputUserRoleSignUp { get; set; }
+    private bool showErrorMessageInputCollegeSignUp { get; set; }
 
     private string eyeImageURLSignUp { get; set; } = eyeViewImageURL;
     private string eyeImageURLRepeatPasswordSignUp { get; set; } = eyeViewImageURL;
@@ -200,6 +225,7 @@ else
     private string textErrorMessageInputPasswordSignUp { get; set; } = "";
     private string textErrorMessageInputRepeatPasswordSignUp { get; set; } = "";
     private string textErrorMessageInputUserRoleSignUp { get; set; } = "";
+    private string textErrorMessageInputCollegeSignUp { get; set; } = "";
 
 
 
@@ -208,9 +234,11 @@ else
 
     private bool isButtonEnabledSignUp = true;
 
-    private List<UserRole> UserRoles { get; set; } = new List<UserRole>();
+    private List<UserRole> UserRoles { get; set; } = new();
+    private List<College> Colleges { get; set; } = new();
 
     private int selectedUserRoleId { get; set; }
+    private int selectedCollegeId { get; set; }
 
 
 
@@ -271,16 +299,17 @@ else
 
         if (!isInitFormSignUp)
         {
-            await InitFormSignUp();
+            await InitFormSignUpAsync();
         }
 
         StateHasChanged();
     }
 
-    private async Task InitFormSignUp()
+    private async Task InitFormSignUpAsync()
     {
 
         var userRolesTemp = await Services.ScheduleAPIService.GetUserRolesAsync();
+        Colleges = await Services.ScheduleAPIService.GetCollegesAsync();
 
         userRolesTemp = userRolesTemp.Where(x => x.Id == 2 || x.Id == 4).ToList();
 
@@ -290,14 +319,14 @@ else
     }
 
 
-    private async void ShowSignIn()
+    private  void ShowSignIn()
     {
         isSignIn = true;
 
         StateHasChanged();
     }
 
-    private async void HandleUserRoleSelectChangeSignUp(ChangeEventArgs e)
+    private  void HandleUserRoleSelectChangeSignUp(ChangeEventArgs e)
     {
         showErrorMessageInputUserRoleSignUp = false;
 
@@ -313,6 +342,27 @@ else
         selectedUserRoleId = int.Parse((string)e.Value);
 
         registrationModel.UserRoleId = selectedUserRoleId;
+
+        StateHasChanged();
+    }
+
+
+    private  void HandleCollegeSelectChangeSignUp(ChangeEventArgs e)
+    {
+        showErrorMessageInputCollegeSignUp = false;
+
+        selectedCollegeId = 0;
+
+
+        if (string.IsNullOrEmpty(e.Value as string))
+        {
+            textErrorMessageInputCollegeSignUp = "колледж не выбран!";
+            showErrorMessageInputCollegeSignUp = true;
+            return;
+        }
+        selectedCollegeId = int.Parse((string)e.Value);
+
+        registrationModel.CollegeId = selectedCollegeId;
 
         StateHasChanged();
     }
@@ -362,10 +412,11 @@ else
 
 
                 // удалить
-                registrationModel.Name = "Temp";
-                registrationModel.Email = "Temp";
+                registrationModel.Name = "name";
+                registrationModel.Email = "mail@gmail.com";
+                //
 
-                var response = await ScheduleAPIService.Account.RegistariotionAsync(login: registrationModel.Login, password: registrationModel.Password, name: registrationModel.Name, email: registrationModel.Email, userRoleId: registrationModel.UserRoleId);
+                var response = await ScheduleAPIService.Account.RegistariotionAsync(login: registrationModel.Login, password: registrationModel.Password, name: registrationModel.Name, email: registrationModel.Email, userRoleId: registrationModel.UserRoleId, collegeId: registrationModel.CollegeId);
 
                 if (response is null)
                 {
@@ -511,12 +562,25 @@ else
     }
     private void HandelFocusInputUserRoleSignUp()
     {
-        focusInputLoginSignIn = true;
+        focusInputUserRoleSignUp = true;
+    }
+
+
+    private void HandelFocusInputCollegeSignUp()
+    {
+        focusInputCollegeSignUp = true;
+    }
+
+    private void HandelBlurInputCollegeSignUp()
+    {
+        focusInputCollegeSignUp = false;
+
+        CheckValidDataLogin();
     }
 
     private void HandelBlurInputUserRoleSignUp()
     {
-        focusInputLoginSignIn = false;
+        focusInputUserRoleSignUp = false;
 
         CheckValidDataLogin();
     }

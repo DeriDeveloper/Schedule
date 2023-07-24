@@ -1,0 +1,43 @@
+﻿@page "/group/{id:int}"
+
+@inject NavigationManager NavigationManager
+
+<div>
+    <div>
+        <p style="font-size:20px;">@group.Name</p>
+        @if (teacher is not null)
+        {
+            <p>Куратор группы: <a href="/teacher/@teacher.Id">@teacher.Name</a></p>
+        }
+        <button class="btn btn-primary" @onclick="(()=>OpenSchedule(Id))">Расписание</button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Models.Teacher teacher = new();
+    private Models.Group group = new();
+
+
+
+    protected override async void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            teacher = await Services.ScheduleAPIService.GetTeacherCuratorOfGroupAsync(Id);
+
+            StateHasChanged();
+
+            var foo = 0;
+        }
+    }
+
+    private void OpenSchedule(int groupId)
+    {
+        NavigationManager.NavigateTo($"/schedule?groupId={groupId}&selectDate={DateTime.Now.ToString("dd.MM.yyyy")}");
+    }
+
+   
+}
